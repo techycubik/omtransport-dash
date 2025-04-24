@@ -6,13 +6,20 @@ import { cn } from "@/lib/utils"
 interface ToastProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string
   children?: React.ReactNode
+  variant?: "default" | "success" | "error" | "warning"
 }
 
-export function Toast({ className, children, ...props }: ToastProps) {
+export function Toast({ className, children, variant = "default", ...props }: ToastProps) {
   return (
     <div
       className={cn(
-        "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border border-gray-200 p-6 pr-8 shadow-lg transition-all data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=open]:slide-in-from-top-full data-[state=closed]:slide-out-to-right-full",
+        "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=open]:slide-in-from-top-full data-[state=closed]:slide-out-to-right-full",
+        {
+          "border-[rgb(var(--border))] bg-[rgb(var(--card))]": variant === "default",
+          "border-[rgb(var(--success-500))] bg-[rgb(var(--success-50))]": variant === "success",
+          "border-[rgb(var(--error-500))] bg-[rgb(var(--error-50))]": variant === "error",
+          "border-[rgb(var(--warning-500))] bg-[rgb(var(--warning-50))]": variant === "warning",
+        },
         className
       )}
       {...props}
@@ -35,18 +42,18 @@ export function ToastProvider({ children }: ToastProviderProps) {
 }
 
 export function ToastTitle({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("text-sm font-medium", className)} {...props} />
+  return <div className={cn("text-sm font-medium text-[rgb(var(--foreground))]", className)} {...props} />
 }
 
 export function ToastDescription({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("text-sm opacity-90", className)} {...props} />
+  return <div className={cn("text-sm opacity-90 text-[rgb(var(--neutral-700))]", className)} {...props} />
 }
 
 export function ToastClose({ className, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       className={cn(
-        "absolute right-2 top-2 rounded-md p-1 text-gray-500 opacity-0 transition-opacity hover:text-gray-900 focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100",
+        "absolute right-2 top-2 rounded-md p-1 text-[rgb(var(--neutral-500))] opacity-0 transition-opacity hover:text-[rgb(var(--neutral-900))] focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] group-hover:opacity-100",
         className
       )}
       {...props}

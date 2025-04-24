@@ -3,11 +3,24 @@ import { cn } from "@/lib/utils"
 
 const Card = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
+  React.HTMLAttributes<HTMLDivElement> & {
+    variant?: "default" | "outline" | "ghost"
+  }
+>(({ className, variant = "default", ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("rounded-lg border border-gray-200 bg-white text-gray-950 shadow-sm overflow-hidden", className)}
+    className={cn(
+      "rounded-md overflow-hidden", 
+      {
+        "bg-[rgb(var(--card))] text-[rgb(var(--card-foreground))] border border-[rgb(var(--border))] shadow-sm": 
+          variant === "default",
+        "border border-[rgb(var(--border))] bg-transparent": 
+          variant === "outline",
+        "bg-transparent": 
+          variant === "ghost",
+      },
+      className
+    )}
     {...props}
   />
 ))
@@ -27,11 +40,13 @@ CardHeader.displayName = "CardHeader"
 
 const CardTitle = React.forwardRef<
   HTMLParagraphElement,
-  React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h3
+  React.HTMLAttributes<HTMLHeadingElement> & { 
+    as?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6"
+  }
+>(({ className, as: Component = "h3", ...props }, ref) => (
+  <Component
     ref={ref}
-    className={cn("text-lg font-semibold leading-none tracking-tight text-gray-900", className)}
+    className={cn("font-semibold leading-none tracking-tight text-[rgb(var(--foreground))]", className)}
     {...props}
   />
 ))
@@ -43,7 +58,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-gray-500", className)}
+    className={cn("text-sm text-[rgb(var(--neutral-500))]", className)}
     {...props}
   />
 ))
