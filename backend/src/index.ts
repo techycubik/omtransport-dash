@@ -1,23 +1,16 @@
 import 'dotenv/config';
-import express from 'express';
-import type { Express, Request, Response } from 'express';
+import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import { Sequelize } from 'sequelize';
 import { initModels } from '../models';
 
-const app: Express = express();
-const PORT = process.env.PORT || 4000;
-
-// Middleware
-app.use(express.json());
-app.use(cors());
-
-// Database setup
-const sequelize = new Sequelize({
+export const app: Express = express();
+export const sequelize = new Sequelize({
   dialect: 'postgres',
   host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT || '5432'),
   username: process.env.DB_USER,
-  password: process.env.DB_PASS,
+  password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   logging: false
 });
@@ -25,41 +18,45 @@ const sequelize = new Sequelize({
 // Initialize models and associations
 const models = initModels(sequelize);
 
+// Import routes after models are initialized
+import materialRoutes from './routes/materialRoutes';
+import customerRoutes from './routes/customerRoutes';
+import vendorRoutes from './routes/vendorRoutes';
+import salesOrderRoutes from './routes/salesOrderRoutes';
+import purchaseOrderRoutes from './routes/purchaseOrderRoutes';
+import crusherRunRoutes from './routes/crusherRunRoutes';
+import authRoutes from './routes/authRoutes';
+import reportRoutes from './routes/reportRoutes';
+
+const PORT = process.env.PORT || 4000;
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// CORS configuration
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Error handler middleware
+app.use((err: any, _req: any, res: any, _next: any) => {
+  console.error(err);
+  res.status(500).json({ message: err.message || 'Server error' });
+});
+
 // Routes
-app.get('/materials', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const materials = await models.Material.findAll();
-    res.json(materials);
-  } catch (error) {
-    console.error('Error fetching materials:', error);
-    res.status(500).json({ error: 'Failed to fetch materials' });
-  }
-});
-
-app.get('/customers', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const customers = await models.Customer.findAll();
-    res.json(customers);
-  } catch (error) {
-    console.error('Error fetching customers:', error);
-    res.status(500).json({ error: 'Failed to fetch customers' });
-  }
-});
-
-app.post('/materials', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { name, uom } = req.body;
-    if (!name || !uom) {
-      res.status(400).json({ error: 'Name and UOM are required' });
-      return;
-    }
-    const material = await models.Material.create({ name, uom });
-    res.status(201).json(material);
-  } catch (error) {
-    console.error('Error creating material:', error);
-    res.status(500).json({ error: 'Failed to create material' });
-  }
-});
+app.use('/api/materials', materialRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/vendors', vendorRoutes);
+app.use('/api/sales', salesOrderRoutes);
+app.use('/api/purchases', purchaseOrderRoutes);
+app.use('/api/crusher', crusherRunRoutes);
+app.use('/auth', authRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Start server
 async function startServer() {

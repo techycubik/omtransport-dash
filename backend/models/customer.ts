@@ -5,6 +5,7 @@ export interface Customer extends Model<InferAttributes<Customer>, InferCreation
   name: string;
   address?: string;
   gstNo?: string;
+  contact?: string;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
 }
@@ -25,6 +26,11 @@ export const CustomerFactory = (sequelize: Sequelize) => {
       allowNull: true
     },
     gstNo: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: 'gst_no'
+    },
+    contact: {
       type: DataTypes.STRING,
       allowNull: true
     }

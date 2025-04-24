@@ -5,6 +5,7 @@ export interface Vendor extends Model<InferAttributes<Vendor>, InferCreationAttr
   name: string;
   contact?: string;
   gstNo?: string;
+  address?: string;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
 }
@@ -27,10 +28,14 @@ export const VendorFactory = (sequelize: Sequelize) => {
     gstNo: {
       type: DataTypes.STRING,
       allowNull: true
+    },
+    address: {
+      type: DataTypes.STRING,
+      allowNull: true
     }
   }, {
     tableName: 'Vendors',
-    underscored: true
+    underscored: false
   });
 
   return Vendor;
