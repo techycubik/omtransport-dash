@@ -4,20 +4,20 @@ import { cn } from "@/lib/utils"
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
-    variant?: "default" | "outline" | "ghost"
+    variant?: "default" | "outline" | "muted"
   }
 >(({ className, variant = "default", ...props }, ref) => (
   <div
     ref={ref}
     className={cn(
-      "rounded-md overflow-hidden", 
+      "rounded-lg overflow-hidden",
       {
         "bg-[rgb(var(--card))] text-[rgb(var(--card-foreground))] border border-[rgb(var(--border))] shadow-sm": 
           variant === "default",
         "border border-[rgb(var(--border))] bg-transparent": 
           variant === "outline",
-        "bg-transparent": 
-          variant === "ghost",
+        "bg-[rgb(var(--muted))] text-[rgb(var(--muted-foreground))] border-none": 
+          variant === "muted",
       },
       className
     )}
@@ -46,7 +46,10 @@ const CardTitle = React.forwardRef<
 >(({ className, as: Component = "h3", ...props }, ref) => (
   <Component
     ref={ref}
-    className={cn("font-semibold leading-none tracking-tight text-[rgb(var(--foreground))]", className)}
+    className={cn(
+      "text-xl font-bold leading-tight text-[rgb(var(--primary))]",
+      className
+    )}
     {...props}
   />
 ))
@@ -58,7 +61,10 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-[rgb(var(--neutral-500))]", className)}
+    className={cn(
+      "text-sm text-[rgb(var(--steel-500))]",
+      className
+    )}
     {...props}
   />
 ))

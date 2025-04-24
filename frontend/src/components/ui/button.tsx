@@ -3,13 +3,13 @@ import { cn } from "@/lib/utils"
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "primary" | "destructive" | "outline" | "ghost" | "link" | "success" | "warning"
+  variant?: "primary" | "secondary" | "action" | "alert" | "outline" | "ghost" | "link"
   size?: "sm" | "md" | "lg" | "icon"
   isLoading?: boolean
 }
 
 export const buttonVariants = ({
-  variant = "default",
+  variant = "primary",
   size = "md",
   className,
 }: {
@@ -20,29 +20,33 @@ export const buttonVariants = ({
   return cn(
     "inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
     {
-      // Variant styles
-      "bg-[rgb(var(--primary-600))] text-white hover:bg-[rgb(var(--primary-700))] focus-visible:ring-[rgb(var(--primary-600))]": 
-        variant === "primary",
-      "bg-[rgb(var(--neutral-900))] text-white hover:bg-[rgb(var(--neutral-800))] focus-visible:ring-[rgb(var(--neutral-900))]": 
-        variant === "default",
-      "bg-[rgb(var(--error-500))] text-white hover:bg-[rgb(var(--error-600))] focus-visible:ring-[rgb(var(--error-500))]": 
-        variant === "destructive",
-      "bg-[rgb(var(--success-500))] text-white hover:bg-[rgb(var(--success-600))] focus-visible:ring-[rgb(var(--success-500))]": 
-        variant === "success",
-      "bg-[rgb(var(--warning-500))] text-white hover:bg-[rgb(var(--warning-600))] focus-visible:ring-[rgb(var(--warning-500))]": 
-        variant === "warning",
-      "border border-[rgb(var(--border))] bg-transparent hover:bg-[rgb(var(--neutral-100))] focus-visible:ring-[rgb(var(--neutral-400))]": 
+      // Variant styles based on brand guidelines
+      "bg-[rgb(var(--navy-500))] text-white hover:bg-[rgb(var(--navy-600))] focus-visible:ring-[rgb(var(--navy-400))]": 
+        variant === "primary", // Navy background with white text
+      
+      "bg-white border border-[rgb(var(--navy-500))] text-[rgb(var(--navy-500))] hover:bg-[rgb(var(--concrete-100))] focus-visible:ring-[rgb(var(--navy-400))]": 
+        variant === "secondary", // White with navy text
+      
+      "bg-[rgb(var(--yellow-400))] text-[rgb(var(--navy-500))] hover:bg-[rgb(var(--yellow-500))] focus-visible:ring-[rgb(var(--yellow-300))]": 
+        variant === "action", // Construction yellow with dark text
+      
+      "bg-[rgb(var(--orange-500))] text-white hover:bg-[rgb(var(--orange-600))] focus-visible:ring-[rgb(var(--orange-400))]": 
+        variant === "alert", // Safety orange or alert red
+      
+      "border border-[rgb(var(--border))] bg-transparent text-[rgb(var(--foreground))] hover:bg-[rgb(var(--concrete-100))] focus-visible:ring-[rgb(var(--steel-300))]": 
         variant === "outline",
-      "bg-transparent hover:bg-[rgb(var(--neutral-100))] focus-visible:ring-[rgb(var(--neutral-400))]": 
+      
+      "bg-transparent text-[rgb(var(--foreground))] hover:bg-[rgb(var(--concrete-100))] focus-visible:ring-[rgb(var(--steel-300))]": 
         variant === "ghost",
-      "text-[rgb(var(--primary-600))] underline-offset-4 hover:underline focus-visible:ring-[rgb(var(--primary-600))]": 
+      
+      "text-[rgb(var(--navy-500))] underline-offset-4 hover:underline focus-visible:ring-[rgb(var(--navy-400))]": 
         variant === "link",
     },
     {
       // Size styles
-      "text-xs px-2.5 py-1 h-7 rounded": size === "sm",
+      "text-xs px-3 py-1.5 h-8 rounded": size === "sm",
       "text-sm px-4 py-2 h-10": size === "md",
-      "text-base px-6 py-2.5 h-12": size === "lg",
+      "text-base px-6 py-2.5 h-12 font-medium": size === "lg",
       "p-2 w-10 h-10": size === "icon",
     },
     className
@@ -50,7 +54,7 @@ export const buttonVariants = ({
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "default", size = "md", isLoading, children, disabled, ...props }, ref) => {
+  ({ className, variant = "primary", size = "md", isLoading, children, disabled, ...props }, ref) => {
     return (
       <button
         className={buttonVariants({ variant, size, className })}

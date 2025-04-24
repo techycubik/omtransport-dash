@@ -22,36 +22,117 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import AppShell from '@/components/AppShell';
+import { Truck, HardHat, Hammer, Package } from 'lucide-react';
 
 export default function DesignSystemPage() {
   return (
     <AppShell pageTitle="Design System">
       <div className="space-y-12">
+        {/* Brand Overview */}
+        <section id="brand-overview" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>OM Transport Brand</CardTitle>
+              <CardDescription>Construction Transport Dashboard Design System</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-6 items-center">
+                <div className="flex-1">
+                  <div className="flex items-center mb-4">
+                    <Truck size={32} className="text-[rgb(var(--navy-500))]" />
+                    <span className="ml-3 text-3xl font-bold">
+                      <span className="text-[rgb(var(--navy-500))]">OM</span>
+                      <span className="text-[rgb(var(--yellow-400))]">Transport</span>
+                    </span>
+                  </div>
+                  <p className="text-[rgb(var(--steel-600))]">
+                    A comprehensive design system for the OM Transport dashboard, focused on professionalism,
+                    reliability, and construction industry standards. The color palette and styling elements 
+                    are designed to create a consistent, user-friendly interface for transport management.
+                  </p>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex flex-col items-center">
+                    <div className="w-16 h-16 rounded-full bg-[rgb(var(--navy-500))] mb-2 flex items-center justify-center">
+                      <span className="text-white font-bold">Navy</span>
+                    </div>
+                    <div className="text-xs">#0A3054</div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-16 h-16 rounded-full bg-[rgb(var(--yellow-400))] mb-2 flex items-center justify-center">
+                      <span className="text-[rgb(var(--navy-500))] font-bold">Yellow</span>
+                    </div>
+                    <div className="text-xs">#FFCC00</div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-16 h-16 rounded-full bg-[rgb(var(--steel-500))] mb-2 flex items-center justify-center">
+                      <span className="text-white font-bold">Steel</span>
+                    </div>
+                    <div className="text-xs">#465662</div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
         {/* Typography */}
         <section id="typography" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Typography</CardTitle>
-              <CardDescription>Text styles used throughout the application</CardDescription>
+              <CardDescription>Font families and text styles</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <h1>Heading 1</h1>
-                <h2>Heading 2</h2>
-                <h3>Heading 3</h3>
-                <h4>Heading 4</h4>
-                <h5>Heading 5</h5>
-                <h6>Heading 6</h6>
+              <div>
+                <h3 className="text-lg font-medium mb-3">Roboto - Primary Font</h3>
+                <div className="space-y-2">
+                  <div className="flex items-end gap-4">
+                    <h1 className="text-3xl">Heading 1</h1>
+                    <span className="text-[rgb(var(--steel-400))] text-sm">32px / Roboto Bold</span>
+                  </div>
+                  <div className="flex items-end gap-4">
+                    <h2 className="text-2xl">Heading 2</h2>
+                    <span className="text-[rgb(var(--steel-400))] text-sm">24px / Roboto Bold</span>
+                  </div>
+                  <div className="flex items-end gap-4">
+                    <h3 className="text-xl">Heading 3</h3>
+                    <span className="text-[rgb(var(--steel-400))] text-sm">22px / Roboto Bold</span>
+                  </div>
+                  <div className="flex items-end gap-4">
+                    <h4 className="text-lg">Heading 4</h4>
+                    <span className="text-[rgb(var(--steel-400))] text-sm">18px / Roboto Bold</span>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <p className="text-sm">Small text for captions and labels</p>
-                <p>Regular paragraph text used for most content</p>
-                <p className="text-lg">Larger text for emphasis</p>
-                <p className="font-medium">Medium weight text</p>
-                <p className="font-semibold">Semibold text</p>
-                <p className="font-bold">Bold text</p>
-                <p className="text-gradient">Gradient text</p>
-                <a href="#" className="underline">Link style</a>
+
+              <div>
+                <h3 className="text-lg font-medium mb-3">Body Text</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-bold mb-1">Regular - 16px</p>
+                    <p>This is the standard body text used throughout the application for readability.</p>
+                  </div>
+                  <div>
+                    <p className="font-bold mb-1">Small - 14px</p>
+                    <p className="text-sm">Used for secondary information and in compact UI elements.</p>
+                  </div>
+                  <div>
+                    <p className="font-bold mb-1">Extra Small - 12px</p>
+                    <p className="text-xs">Used for footnotes, captions, and metadata.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium mb-3">Text Styles</h3>
+                <div className="space-y-2">
+                  <p className="font-normal">Regular (400) - Primary body text</p>
+                  <p className="font-medium">Medium (500) - Emphasis, subheadings</p>
+                  <p className="font-bold">Bold (700) - Headers, important content</p>
+                  <p className="text-gradient">Gradient text effect</p>
+                  <p className="text-construction">Construction gradient text effect</p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -62,59 +143,106 @@ export default function DesignSystemPage() {
           <Card>
             <CardHeader>
               <CardTitle>Color System</CardTitle>
-              <CardDescription>Primary and semantic colors used in the application</CardDescription>
+              <CardDescription>Brand colors and palettes</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div>
                   <h3 className="text-lg font-medium mb-3">Primary Colors</h3>
-                  <div className="grid grid-cols-5 gap-2">
-                    <div className="p-4 rounded bg-[rgb(var(--primary-50))] text-[rgb(var(--primary-900))]">50</div>
-                    <div className="p-4 rounded bg-[rgb(var(--primary-100))] text-[rgb(var(--primary-900))]">100</div>
-                    <div className="p-4 rounded bg-[rgb(var(--primary-200))] text-[rgb(var(--primary-900))]">200</div>
-                    <div className="p-4 rounded bg-[rgb(var(--primary-300))] text-[rgb(var(--primary-900))]">300</div>
-                    <div className="p-4 rounded bg-[rgb(var(--primary-400))] text-white">400</div>
-                    <div className="p-4 rounded bg-[rgb(var(--primary-500))] text-white">500</div>
-                    <div className="p-4 rounded bg-[rgb(var(--primary-600))] text-white">600</div>
-                    <div className="p-4 rounded bg-[rgb(var(--primary-700))] text-white">700</div>
-                    <div className="p-4 rounded bg-[rgb(var(--primary-800))] text-white">800</div>
-                    <div className="p-4 rounded bg-[rgb(var(--primary-900))] text-white">900</div>
+                  <div className="grid grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <div className="h-24 rounded-lg bg-[rgb(var(--navy-500))] flex items-end p-3">
+                        <span className="text-white font-bold">Navy Blue</span>
+                      </div>
+                      <p className="text-sm text-center">#0A3054</p>
+                      <p className="text-xs text-center text-[rgb(var(--steel-500))]">Professionalism, Reliability</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-24 rounded-lg bg-[rgb(var(--yellow-400))] flex items-end p-3">
+                        <span className="text-[rgb(var(--navy-500))] font-bold">Construction Yellow</span>
+                      </div>
+                      <p className="text-sm text-center">#FFCC00</p>
+                      <p className="text-xs text-center text-[rgb(var(--steel-500))]">Caution, Visibility</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-24 rounded-lg bg-[rgb(var(--steel-500))] flex items-end p-3">
+                        <span className="text-white font-bold">Steel Gray</span>
+                      </div>
+                      <p className="text-sm text-center">#465662</p>
+                      <p className="text-xs text-center text-[rgb(var(--steel-500))]">Strength, Durability</p>
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium mb-3">Neutral Colors</h3>
-                  <div className="grid grid-cols-5 gap-2">
-                    <div className="p-4 rounded bg-[rgb(var(--neutral-50))] text-[rgb(var(--neutral-900))]">50</div>
-                    <div className="p-4 rounded bg-[rgb(var(--neutral-100))] text-[rgb(var(--neutral-900))]">100</div>
-                    <div className="p-4 rounded bg-[rgb(var(--neutral-200))] text-[rgb(var(--neutral-900))]">200</div>
-                    <div className="p-4 rounded bg-[rgb(var(--neutral-300))] text-[rgb(var(--neutral-900))]">300</div>
-                    <div className="p-4 rounded bg-[rgb(var(--neutral-400))] text-white">400</div>
-                    <div className="p-4 rounded bg-[rgb(var(--neutral-500))] text-white">500</div>
-                    <div className="p-4 rounded bg-[rgb(var(--neutral-600))] text-white">600</div>
-                    <div className="p-4 rounded bg-[rgb(var(--neutral-700))] text-white">700</div>
-                    <div className="p-4 rounded bg-[rgb(var(--neutral-800))] text-white">800</div>
-                    <div className="p-4 rounded bg-[rgb(var(--neutral-900))] text-white">900</div>
+                  <h3 className="text-lg font-medium mb-3">Secondary Colors</h3>
+                  <div className="grid grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <div className="h-24 rounded-lg bg-[rgb(var(--concrete-400))] flex items-end p-3">
+                        <span className="text-[rgb(var(--navy-500))] font-bold">Concrete Gray</span>
+                      </div>
+                      <p className="text-sm text-center">#D0D0D0</p>
+                      <p className="text-xs text-center text-[rgb(var(--steel-500))]">Neutral background</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-24 rounded-lg bg-[rgb(var(--brown-500))] flex items-end p-3">
+                        <span className="text-white font-bold">Earth Brown</span>
+                      </div>
+                      <p className="text-sm text-center">#8B572A</p>
+                      <p className="text-xs text-center text-[rgb(var(--steel-500))]">Construction materials</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-24 rounded-lg bg-[rgb(var(--orange-500))] flex items-end p-3">
+                        <span className="text-white font-bold">Safety Orange</span>
+                      </div>
+                      <p className="text-sm text-center">#FF5500</p>
+                      <p className="text-xs text-center text-[rgb(var(--steel-500))]">Alerts, important info</p>
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium mb-3">Semantic Colors</h3>
-                  <div className="grid grid-cols-3 gap-4">
+                  <h3 className="text-lg font-medium mb-3">Accent Colors</h3>
+                  <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <div className="p-4 rounded bg-[rgb(var(--success-50))] text-[rgb(var(--success-600))]">Success Light</div>
-                      <div className="p-4 rounded bg-[rgb(var(--success-500))] text-white">Success</div>
-                      <div className="p-4 rounded bg-[rgb(var(--success-600))] text-white">Success Dark</div>
+                      <div className="h-24 rounded-lg bg-[rgb(var(--success-500))] flex items-end p-3">
+                        <span className="text-white font-bold">Success Green</span>
+                      </div>
+                      <p className="text-sm text-center">#2E8B57</p>
+                      <p className="text-xs text-center text-[rgb(var(--steel-500))]">Positive metrics, confirmations</p>
                     </div>
                     <div className="space-y-2">
-                      <div className="p-4 rounded bg-[rgb(var(--warning-50))] text-[rgb(var(--warning-600))]">Warning Light</div>
-                      <div className="p-4 rounded bg-[rgb(var(--warning-500))] text-white">Warning</div>
-                      <div className="p-4 rounded bg-[rgb(var(--warning-600))] text-white">Warning Dark</div>
+                      <div className="h-24 rounded-lg bg-[rgb(var(--error-500))] flex items-end p-3">
+                        <span className="text-white font-bold">Alert Red</span>
+                      </div>
+                      <p className="text-sm text-center">#D22B2B</p>
+                      <p className="text-xs text-center text-[rgb(var(--steel-500))]">Critical notifications, errors</p>
                     </div>
-                    <div className="space-y-2">
-                      <div className="p-4 rounded bg-[rgb(var(--error-50))] text-[rgb(var(--error-600))]">Error Light</div>
-                      <div className="p-4 rounded bg-[rgb(var(--error-500))] text-white">Error</div>
-                      <div className="p-4 rounded bg-[rgb(var(--error-600))] text-white">Error Dark</div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Color Tints</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="mb-2 font-medium">Navy Blue</p>
+                      <div className="grid grid-cols-5 gap-1">
+                        <div className="p-4 rounded bg-[rgb(var(--navy-50))] text-[rgb(var(--navy-900))]">50</div>
+                        <div className="p-4 rounded bg-[rgb(var(--navy-100))] text-[rgb(var(--navy-900))]">100</div>
+                        <div className="p-4 rounded bg-[rgb(var(--navy-300))] text-[rgb(var(--navy-900))]">300</div>
+                        <div className="p-4 rounded bg-[rgb(var(--navy-500))] text-white">500</div>
+                        <div className="p-4 rounded bg-[rgb(var(--navy-700))] text-white">700</div>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-2 font-medium">Construction Yellow</p>
+                      <div className="grid grid-cols-5 gap-1">
+                        <div className="p-4 rounded bg-[rgb(var(--yellow-50))] text-[rgb(var(--yellow-900))]">50</div>
+                        <div className="p-4 rounded bg-[rgb(var(--yellow-100))] text-[rgb(var(--yellow-900))]">100</div>
+                        <div className="p-4 rounded bg-[rgb(var(--yellow-300))] text-[rgb(var(--yellow-900))]">300</div>
+                        <div className="p-4 rounded bg-[rgb(var(--yellow-400))] text-[rgb(var(--yellow-900))]">400</div>
+                        <div className="p-4 rounded bg-[rgb(var(--yellow-600))] text-white">600</div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -128,42 +256,74 @@ export default function DesignSystemPage() {
           <Card>
             <CardHeader>
               <CardTitle>Buttons</CardTitle>
-              <CardDescription>Button variants used throughout the application</CardDescription>
+              <CardDescription>Button variants and states based on brand guidelines</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Button Variants</h3>
                 <div className="flex flex-wrap gap-4">
-                  <Button variant="default">Default</Button>
-                  <Button variant="primary">Primary</Button>
-                  <Button variant="destructive">Destructive</Button>
-                  <Button variant="success">Success</Button>
-                  <Button variant="warning">Warning</Button>
-                  <Button variant="outline">Outline</Button>
-                  <Button variant="ghost">Ghost</Button>
-                  <Button variant="link">Link</Button>
+                  <div className="flex flex-col items-center gap-2">
+                    <Button variant="primary">Primary</Button>
+                    <span className="text-xs text-[rgb(var(--steel-500))]">Navy Blue</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <Button variant="secondary">Secondary</Button>
+                    <span className="text-xs text-[rgb(var(--steel-500))]">White/Navy</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <Button variant="action">Action</Button>
+                    <span className="text-xs text-[rgb(var(--steel-500))]">Yellow</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <Button variant="alert">Alert</Button>
+                    <span className="text-xs text-[rgb(var(--steel-500))]">Safety Orange</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <Button variant="outline">Outline</Button>
+                    <span className="text-xs text-[rgb(var(--steel-500))]">Bordered</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <Button variant="ghost">Ghost</Button>
+                    <span className="text-xs text-[rgb(var(--steel-500))]">Subtle</span>
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Button Sizes</h3>
                 <div className="flex flex-wrap gap-4 items-center">
-                  <Button variant="primary" size="sm">Small</Button>
-                  <Button variant="primary" size="md">Medium</Button>
-                  <Button variant="primary" size="lg">Large</Button>
-                  <Button variant="outline" size="icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                  </Button>
+                  <div className="flex flex-col items-center gap-2">
+                    <Button variant="primary" size="sm">Small</Button>
+                    <span className="text-xs text-[rgb(var(--steel-500))]">14px</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <Button variant="primary" size="md">Medium</Button>
+                    <span className="text-xs text-[rgb(var(--steel-500))]">16px</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <Button variant="primary" size="lg">Large</Button>
+                    <span className="text-xs text-[rgb(var(--steel-500))]">18px</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <Button variant="outline" size="icon">
+                      <Hammer size={18} />
+                    </Button>
+                    <span className="text-xs text-[rgb(var(--steel-500))]">Icon</span>
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Button States</h3>
                 <div className="flex flex-wrap gap-4">
-                  <Button variant="primary" disabled>Disabled</Button>
-                  <Button variant="primary" isLoading>Loading</Button>
+                  <div className="flex flex-col items-center gap-2">
+                    <Button variant="primary" disabled>Disabled</Button>
+                    <span className="text-xs text-[rgb(var(--steel-500))]">50% opacity</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <Button variant="primary" isLoading>Loading</Button>
+                    <span className="text-xs text-[rgb(var(--steel-500))]">With spinner</span>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -175,17 +335,17 @@ export default function DesignSystemPage() {
           <Card>
             <CardHeader>
               <CardTitle>Cards</CardTitle>
-              <CardDescription>Card components for grouping related content</CardDescription>
+              <CardDescription>Card components with 8px rounded corners and subtle shadows</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card variant="default">
                   <CardHeader>
                     <CardTitle>Default Card</CardTitle>
-                    <CardDescription>This is a standard card with header and content.</CardDescription>
+                    <CardDescription>With border and shadow</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p>Card content goes here.</p>
+                    <p>Card content with standard styling. Used for most content sections.</p>
                   </CardContent>
                   <CardFooter>
                     <Button variant="primary" size="sm">Action</Button>
@@ -195,23 +355,23 @@ export default function DesignSystemPage() {
                 <Card variant="outline">
                   <CardHeader>
                     <CardTitle>Outline Card</CardTitle>
-                    <CardDescription>A card with an outline style.</CardDescription>
+                    <CardDescription>Border only</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p>Card content goes here.</p>
+                    <p>Outline style for secondary content or low-emphasis sections.</p>
                   </CardContent>
                   <CardFooter>
                     <Button variant="outline" size="sm">Action</Button>
                   </CardFooter>
                 </Card>
 
-                <Card variant="ghost">
+                <Card variant="muted">
                   <CardHeader>
-                    <CardTitle>Ghost Card</CardTitle>
-                    <CardDescription>A card with minimal styling.</CardDescription>
+                    <CardTitle>Muted Card</CardTitle>
+                    <CardDescription>Subtle background</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p>Card content goes here.</p>
+                    <p>Muted style for tertiary content or background sections.</p>
                   </CardContent>
                   <CardFooter>
                     <Button variant="ghost" size="sm">Action</Button>
@@ -222,12 +382,12 @@ export default function DesignSystemPage() {
           </Card>
         </section>
 
-        {/* Form */}
+        {/* Form Elements */}
         <section id="form" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Form Elements</CardTitle>
-              <CardDescription>Basic form components for user input</CardDescription>
+              <CardDescription>Input fields and form components</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -245,6 +405,18 @@ export default function DesignSystemPage() {
                     <Input id="disabled" disabled placeholder="Disabled input" />
                   </div>
                 </div>
+
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Form Guidelines</h3>
+                  <ul className="space-y-2 list-disc pl-5 text-sm text-[rgb(var(--steel-600))]">
+                    <li>Use clear, descriptive labels above input fields</li>
+                    <li>Provide helper text for complex inputs</li>
+                    <li>Use placeholder text sparingly</li>
+                    <li>Group related form fields logically</li>
+                    <li>Provide clear validation messages</li>
+                    <li>Use consistent styling for all form elements</li>
+                  </ul>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -255,58 +427,96 @@ export default function DesignSystemPage() {
           <Card>
             <CardHeader>
               <CardTitle>Tables</CardTitle>
-              <CardDescription>Structured data presentation</CardDescription>
+              <CardDescription>Data presentation with visual hierarchy</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
-                <TableCaption>A list of example transactions</TableCaption>
+                <TableCaption>Example Transport Schedule</TableCaption>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Transaction ID</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Amount</TableHead>
+                    <TableHead>Vehicle ID</TableHead>
+                    <TableHead>Driver</TableHead>
+                    <TableHead>Route</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell>TRX-001</TableCell>
-                    <TableCell>2023-04-12</TableCell>
-                    <TableCell>₹24,500</TableCell>
+                    <TableCell>TRK-001</TableCell>
+                    <TableCell>Raj Sharma</TableCell>
+                    <TableCell>Mumbai - Pune</TableCell>
                     <TableCell>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgb(var(--success-50))] text-[rgb(var(--success-600))]">
-                        Completed
+                      <span className="badge badge-success">
+                        In Transit
                       </span>
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell>TRX-002</TableCell>
-                    <TableCell>2023-04-14</TableCell>
-                    <TableCell>₹18,200</TableCell>
+                    <TableCell>TRK-002</TableCell>
+                    <TableCell>Amit Patel</TableCell>
+                    <TableCell>Delhi - Jaipur</TableCell>
                     <TableCell>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgb(var(--warning-50))] text-[rgb(var(--warning-600))]">
-                        Pending
+                      <span className="badge badge-warning">
+                        Delayed
                       </span>
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell>TRX-003</TableCell>
-                    <TableCell>2023-04-15</TableCell>
-                    <TableCell>₹12,750</TableCell>
+                    <TableCell>TRK-003</TableCell>
+                    <TableCell>Sunil Kumar</TableCell>
+                    <TableCell>Chennai - Bangalore</TableCell>
                     <TableCell>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgb(var(--error-50))] text-[rgb(var(--error-600))]">
-                        Failed
+                      <span className="badge badge-error">
+                        Breakdown
                       </span>
                     </TableCell>
                   </TableRow>
                 </TableBody>
                 <TableFooter>
                   <TableRow>
-                    <TableCell colSpan={2}>Total</TableCell>
-                    <TableCell colSpan={2}>₹55,450</TableCell>
+                    <TableCell colSpan={2}>Fleet Status Summary</TableCell>
+                    <TableCell colSpan={2}>3 vehicles active</TableCell>
                   </TableRow>
                 </TableFooter>
               </Table>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Icons */}
+        <section id="icons" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Icons</CardTitle>
+              <CardDescription>Line icons with 2px stroke weight</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="h-16 w-16 rounded-md bg-[rgb(var(--steel-50))] flex items-center justify-center">
+                    <Truck size={32} className="text-[rgb(var(--navy-500))]" />
+                  </div>
+                  <span className="text-sm font-medium">Transport</span>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="h-16 w-16 rounded-md bg-[rgb(var(--steel-50))] flex items-center justify-center">
+                    <HardHat size={32} className="text-[rgb(var(--navy-500))]" />
+                  </div>
+                  <span className="text-sm font-medium">Construction</span>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="h-16 w-16 rounded-md bg-[rgb(var(--steel-50))] flex items-center justify-center">
+                    <Package size={32} className="text-[rgb(var(--navy-500))]" />
+                  </div>
+                  <span className="text-sm font-medium">Materials</span>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="h-16 w-16 rounded-md bg-[rgb(var(--steel-50))] flex items-center justify-center">
+                    <Hammer size={32} className="text-[rgb(var(--navy-500))]" />
+                  </div>
+                  <span className="text-sm font-medium">Tools</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </section>
