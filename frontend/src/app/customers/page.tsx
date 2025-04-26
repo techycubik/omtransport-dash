@@ -5,7 +5,6 @@ import AppShell from '@/components/AppShell';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
@@ -13,8 +12,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { api } from '@/lib/api';
 import toast from 'react-hot-toast';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, X, Edit, ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import AddressAutocomplete from '@/components/AddressAutocomplete';
 
 // Define the Customer type
 interface Customer {
@@ -23,14 +23,24 @@ interface Customer {
   gstNo?: string;
   address?: string;
   contact?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  maps_link?: string;
 }
 
-// Define the form schema using zod
+// Define the form schema
 const customerSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  gstNo: z.string().optional().transform(val => val === '' ? undefined : val),
-  address: z.string().optional().transform(val => val === '' ? undefined : val),
-  contact: z.string().optional().transform(val => val === '' ? undefined : val)
+  gstNo: z.string().optional(),
+  address: z.string().optional(),
+  contact: z.string().optional(),
+  street: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  pincode: z.string().optional(),
+  maps_link: z.string().optional()
 });
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
@@ -38,9 +48,10 @@ type CustomerFormValues = z.infer<typeof customerSchema>;
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
   // Initialize the form
   const form = useForm<CustomerFormValues>({
@@ -49,7 +60,12 @@ export default function CustomersPage() {
       name: '',
       gstNo: '',
       address: '',
-      contact: ''
+      contact: '',
+      street: '',
+      city: '',
+      state: '',
+      pincode: '',
+      maps_link: ''
     }
   });
 
@@ -96,11 +112,23 @@ export default function CustomersPage() {
     try {
       console.log('Submitting form with values:', values);
       
-      const response = await api('/api/customers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values)
-      });
+      let response;
+      
+      if (editingCustomer) {
+        // Update existing customer
+        response = await api(`/api/customers/${editingCustomer.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(values)
+        });
+      } else {
+        // Create new customer
+        response = await api('/api/customers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(values)
+        });
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -109,22 +137,34 @@ export default function CustomersPage() {
         try {
           // Try to parse as JSON
           const errorData = JSON.parse(errorText);
-          throw new Error(errorData.error || 'Failed to create customer');
+          throw new Error(errorData.error || (editingCustomer ? 'Failed to update customer' : 'Failed to create customer'));
         } catch (parseError) {
           // If it's not valid JSON, use the raw text
-          throw new Error(errorText || 'Failed to create customer');
+          throw new Error(errorText || (editingCustomer ? 'Failed to update customer' : 'Failed to create customer'));
         }
       }
       
-      const newCustomer = await response.json();
-      setCustomers(prevCustomers => [...prevCustomers, newCustomer]);
+      const customerData = await response.json();
       
-      toast.success('Customer created successfully');
-      setIsSheetOpen(false);
+      if (editingCustomer) {
+        // Update the customer in the list
+        setCustomers(prevCustomers => 
+          prevCustomers.map(c => c.id === editingCustomer.id ? customerData : c)
+        );
+        toast.success('Customer updated successfully');
+      } else {
+        // Add the new customer to the list
+        setCustomers(prevCustomers => [...prevCustomers, customerData]);
+        toast.success('Customer created successfully');
+      }
+      
+      setShowForm(false);
       form.reset();
+      setEditingCustomer(null);
+      fetchCustomers();
     } catch (error) {
-      console.error('Error creating customer:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to create customer');
+      console.error('Error saving customer:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save customer');
     }
   };
 
@@ -151,104 +191,261 @@ export default function CustomersPage() {
       ))}
     </div>
   );
+  
+  // Add a function to handle address selection
+  const handleAddressSelect = (addressData: {
+    street?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+    maps_link?: string;
+    fullAddress?: string;
+  }) => {
+    form.setValue('street', addressData.street || '');
+    form.setValue('city', addressData.city || '');
+    form.setValue('state', addressData.state || '');
+    form.setValue('pincode', addressData.pincode || '');
+    form.setValue('maps_link', addressData.maps_link || '');
+    form.setValue('address', addressData.fullAddress || '');
+  };
 
-  return (
-    <AppShell pageTitle="Customers">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-primary-900">Customers</h1>
-        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-          <SheetTrigger asChild>
-            <Button variant="primary" className="flex items-center gap-1">
-              <Plus className="h-4 w-4" />
-              Add Customer
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right">
-            <SheetHeader>
-              <SheetTitle>Add New Customer</SheetTitle>
-            </SheetHeader>
-            <div className="mt-6">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter customer name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="gstNo"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>GST Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter GST number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Address</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter address" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="contact"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter contact information" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex justify-end pt-4">
-                    <Button type="submit" variant="primary" disabled={form.formState.isSubmitting}>
-                      {form.formState.isSubmitting ? 'Saving...' : 'Save Customer'}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </div>
-          </SheetContent>
-        </Sheet>
+  // Add handleEdit function back
+  const handleEdit = (customer: Customer) => {
+    setEditingCustomer(customer);
+    form.reset({
+      name: customer.name,
+      gstNo: customer.gstNo || '',
+      contact: customer.contact || '',
+      address: customer.address || '',
+      street: customer.street || '',
+      city: customer.city || '',
+      state: customer.state || '',
+      pincode: customer.pincode || '',
+      maps_link: customer.maps_link || ''
+    });
+    setShowForm(true);
+  };
+
+  // Form component - use this pattern consistently across all forms
+  const CustomerForm = () => (
+    <div className="w-full">
+      <div className="mb-4 flex items-center">
+        <Button 
+          variant="ghost" 
+          onClick={() => {
+            setShowForm(false);
+            setEditingCustomer(null);
+            form.reset();
+          }}
+          className="mr-2"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back
+        </Button>
+        <h2 className="text-2xl font-bold">
+          {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
+        </h2>
       </div>
+      
+      <Card className="p-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter customer name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="gstNo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>GST Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter GST number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="pt-2">
+              <h3 className="font-medium mb-3">Address Details</h3>
+              
+              <div className="mb-4">
+                <label className="font-medium mb-2 block">Search Address</label>
+                <AddressAutocomplete 
+                  onAddressSelect={handleAddressSelect} 
+                  defaultValue={editingCustomer?.address || ''}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Enter an address above, then edit the fields below as needed
+                </p>
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="street"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Street/Location</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter street or location" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>City</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter city" 
+                          {...field} 
+                          onChange={(e) => {
+                            field.onChange(e);
+                            // If the city is changed, we assume the user wants to change it manually
+                            // but we won't auto-update other fields
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>State</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter state" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <FormField
+                  control={form.control}
+                  name="pincode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Pincode</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter pincode" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="maps_link"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Google Maps Link</FormLabel>
+                      <FormControl>
+                        <div className="flex">
+                          <Input placeholder="Enter Google Maps URL" {...field} className="rounded-r-none" />
+                          {field.value && (
+                            <a 
+                              href={field.value} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="bg-blue-500 hover:bg-blue-600 text-white px-3 flex items-center justify-center rounded-r-md"
+                            >
+                              Open
+                            </a>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem className="mt-4">
+                    <FormLabel>Full Address (Legacy)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter full address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="contact"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter contact information" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="flex justify-end pt-4">
+              <Button 
+                type="submit"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? 'Saving...' : (editingCustomer ? 'Update Customer' : 'Save Customer')}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </Card>
+    </div>
+  );
 
-      {/* Search bar */}
-      <div className="mb-4 relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <Input 
-          placeholder="Search by name, contact, GST..." 
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+  // List component - use this pattern consistently
+  const CustomerListView = () => (
+    <>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Customers</h1>
+        <Button 
+          onClick={() => setShowForm(true)}
+          className="flex items-center gap-1"
+        >
+          <Plus className="h-4 w-4" />
+          Add Customer
+        </Button>
       </div>
 
       {/* Error display */}
       {error && (
         <div className="p-4 mb-4 text-red-500 bg-red-50 border border-red-200 rounded-md">
-          <div className="font-medium mb-2">Error loading customer data:</div>
+          <div className="font-medium mb-2">Error loading customers:</div>
           <p>{error}</p>
           <Button 
             variant="link" 
@@ -259,42 +456,82 @@ export default function CustomersPage() {
           </Button>
         </div>
       )}
+      
+      {/* Search */}
+      <div className="mb-4 relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Input 
+          placeholder="Search by name, contact or address..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
 
+      {/* Customers Table */}
       <Card>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[80px]">ID</TableHead>
+                <TableHead>ID</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>GST Number</TableHead>
                 <TableHead>Address</TableHead>
                 <TableHead>Contact</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={6} className="p-0">
                     <CustomerTableSkeleton />
                   </TableCell>
                 </TableRow>
               ) : filteredCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-6 text-gray-500">
-                    {searchTerm.trim() !== '' 
-                      ? 'No customers match your search.' 
-                      : 'No customers found. Click "Add Customer" to create one.'}
+                  <TableCell colSpan={6} className="text-center py-10 text-slate-500">
+                    {searchTerm ? 'No customers match your search.' : 'No customers found. Add your first customer to get started.'}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredCustomers.map((customer) => (
-                  <TableRow key={customer.id}>
-                    <TableCell>{customer.id}</TableCell>
-                    <TableCell className="font-medium">{customer.name}</TableCell>
+                filteredCustomers.map(customer => (
+                  <TableRow key={customer.id} className="hover:bg-gray-50">
+                    <TableCell className="font-medium">{customer.id}</TableCell>
+                    <TableCell>{customer.name}</TableCell>
                     <TableCell>{customer.gstNo || '-'}</TableCell>
-                    <TableCell>{customer.address || '-'}</TableCell>
+                    <TableCell>
+                      {customer.street && <div>{customer.street}</div>}
+                      {(customer.city || customer.state || customer.pincode) && (
+                        <div>
+                          <span className="font-medium">{customer.city}</span>
+                          {customer.city && customer.state ? ', ' : ''}
+                          {customer.state} {customer.pincode}
+                        </div>
+                      )}
+                      {!customer.street && !customer.city && !customer.state && !customer.pincode && customer.address}
+                      {customer.maps_link && (
+                        <a 
+                          href={customer.maps_link} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-blue-500 hover:underline text-sm block mt-1 flex items-center"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          View on Maps
+                        </a>
+                      )}
+                    </TableCell>
                     <TableCell>{customer.contact || '-'}</TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(customer)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -302,6 +539,15 @@ export default function CustomersPage() {
           </Table>
         </div>
       </Card>
+    </>
+  );
+
+  // Use this consistent pattern for conditional rendering
+  return (
+    <AppShell pageTitle="Customers">
+      <div className="relative">
+        {showForm ? <CustomerForm /> : <CustomerListView />}
+      </div>
     </AppShell>
   );
 } 

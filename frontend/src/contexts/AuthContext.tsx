@@ -8,7 +8,8 @@ import { setCookie, getCookie, deleteCookie } from '@/lib/cookies';
 type User = {
   id: number;
   email: string;
-  role: 'ADMIN' | 'MANAGER' | 'STAFF';
+  name?: string;
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'STAFF';
 };
 
 type AuthState = {
@@ -169,5 +170,9 @@ export function useAuth() {
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthContextProvider');
   }
-  return context;
+  return {
+    ...context,
+    isSuperAdmin: context.user?.role === 'SUPER_ADMIN',
+    isAdmin: context.user?.role === 'ADMIN' || context.user?.role === 'SUPER_ADMIN'
+  };
 } 

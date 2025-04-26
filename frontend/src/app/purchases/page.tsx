@@ -7,12 +7,11 @@ import { z } from 'zod';
 import AppShell from '@/components/AppShell';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -38,7 +37,7 @@ interface PurchaseOrder {
   materialId: number;
   qty: number;
   rate: number;
-  status: 'PENDING' | 'RECEIVED' | 'PARTIAL';
+  status: 'PENDING' | 'CONFIRMED' | 'DELIVERED' | 'CANCELLED';
   orderDate: string;
   createdAt?: string;
   updatedAt?: string;
@@ -52,7 +51,7 @@ const formSchema = z.object({
   materialId: z.coerce.number().positive('Please select a material'),
   qty: z.coerce.number().positive('Quantity must be positive'),
   rate: z.coerce.number().positive('Rate must be positive'),
-  status: z.enum(['PENDING', 'RECEIVED', 'PARTIAL']),
+  status: z.enum(['PENDING', 'CONFIRMED', 'DELIVERED', 'CANCELLED']),
   orderDate: z.string().refine(val => !isNaN(Date.parse(val)), {
     message: 'Please enter a valid date'
   }),
@@ -66,7 +65,7 @@ export default function PurchasesPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [editRow, setEditRow] = useState<PurchaseOrder | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -180,7 +179,6 @@ export default function PurchasesPage() {
       console.log('Formatted values for API:', formattedValues);
       
       let response;
-      let successMessage;
       
       if (editRow) {
         // Update existing purchase order
@@ -191,7 +189,6 @@ export default function PurchasesPage() {
           },
           body: JSON.stringify(formattedValues),
         });
-        successMessage = 'Purchase order updated successfully';
       } else {
         // Create new purchase order
         response = await api('/api/purchases', {
@@ -201,7 +198,6 @@ export default function PurchasesPage() {
           },
           body: JSON.stringify(formattedValues),
         });
-        successMessage = 'Purchase order created successfully';
       }
 
       if (!response.ok) {
@@ -239,10 +235,10 @@ export default function PurchasesPage() {
         setPurchases(prevPurchases => [...prevPurchases, enhancedPurchase]);
       }
       
-      toast.success(successMessage);
-      setIsSheetOpen(false);
-      setEditRow(null);
+      toast.success(editRow ? 'Purchase order updated successfully' : 'Purchase order created successfully');
+      setShowForm(false);
       form.reset();
+      setEditRow(null);
     } catch (error) {
       console.error('Error saving purchase order:', error);
       // Log more detailed error information
@@ -309,169 +305,232 @@ export default function PurchasesPage() {
     </div>
   );
 
-  return (
-    <AppShell pageTitle="Purchases">
+  // Full-screen Purchase Form
+  const PurchaseForm = () => (
+    <div className="w-full">
+      <div className="mb-4 flex items-center">
+        <Button 
+          variant="ghost" 
+          onClick={() => {
+            setShowForm(false);
+            setEditRow(null);
+            form.reset();
+          }}
+          className="mr-2"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back
+        </Button>
+        <h2 className="text-2xl font-bold">{editRow ? 'Edit Purchase Order' : 'Add New Purchase Order'}</h2>
+      </div>
+      
+      <Card className="p-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Vendor field */}
+              <FormField
+                control={form.control}
+                name="vendorId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Vendor *</FormLabel>
+                    <FormControl>
+                      <select
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        {...field}
+                      >
+                        <option value={0}>Select Vendor</option>
+                        {vendors.map(vendor => (
+                          <option key={vendor.id} value={vendor.id}>
+                            {vendor.name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Order Date field */}
+              <FormField
+                control={form.control}
+                name="orderDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Order Date *</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} className="w-full" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Status field */}
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status *</FormLabel>
+                    <FormControl>
+                      <select
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        {...field}
+                      >
+                        <option value="PENDING">Pending</option>
+                        <option value="CONFIRMED">Confirmed</option>
+                        <option value="DELIVERED">Delivered</option>
+                        <option value="CANCELLED">Cancelled</option>
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Address field */}
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Delivery Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter delivery address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div>
+              <h3 className="text-base font-semibold mb-2">Item Details</h3>
+              <Card className="p-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-1/3">Material</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Rate</TableHead>
+                      <TableHead>Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>
+                        <FormField
+                          control={form.control}
+                          name="materialId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <select
+                                  className="w-full p-2 border border-gray-300 rounded-md"
+                                  {...field}
+                                >
+                                  <option value={0}>Select Material</option>
+                                  {materials.map(material => (
+                                    <option key={material.id} value={material.id}>
+                                      {material.name} ({material.uom})
+                                    </option>
+                                  ))}
+                                </select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <FormField
+                          control={form.control}
+                          name="qty"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  placeholder="0" 
+                                  {...field} 
+                                  onChange={e => field.onChange(Number(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <FormField
+                          control={form.control}
+                          name="rate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  placeholder="0" 
+                                  {...field} 
+                                  onChange={e => field.onChange(Number(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium">₹{(form.watch('qty') * form.watch('rate')).toFixed(2) || '0.00'}</span>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </Card>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setShowForm(false);
+                  setEditRow(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? 'Saving...' : (editRow ? 'Update Purchase Order' : 'Save Purchase Order')}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </Card>
+    </div>
+  );
+
+  // Purchase List View
+  const PurchaseListView = () => (
+    <>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Purchase Orders</h1>
-        <Sheet open={isSheetOpen} onOpenChange={(open) => {
-          setIsSheetOpen(open);
-          if (!open) setEditRow(null);
-        }}>
-          <SheetTrigger asChild>
-            <Button className="flex items-center gap-1">
-              <Plus className="h-4 w-4" />
-              Add Purchase
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right">
-            <SheetHeader>
-              <SheetTitle>{editRow ? 'Edit Purchase Order' : 'Add New Purchase Order'}</SheetTitle>
-            </SheetHeader>
-            <div className="mt-6">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  {/* Vendor field */}
-                  <FormField
-                    control={form.control}
-                    name="vendorId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Vendor *</FormLabel>
-                        <FormControl>
-                          <select
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            {...field}
-                          >
-                            <option value={0}>Select Vendor</option>
-                            {vendors.map(vendor => (
-                              <option key={vendor.id} value={vendor.id}>
-                                {vendor.name}
-                              </option>
-                            ))}
-                          </select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Material field */}
-                  <FormField
-                    control={form.control}
-                    name="materialId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Material *</FormLabel>
-                        <FormControl>
-                          <select
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            {...field}
-                          >
-                            <option value={0}>Select Material</option>
-                            {materials.map(material => (
-                              <option key={material.id} value={material.id}>
-                                {material.name} ({material.uom})
-                              </option>
-                            ))}
-                          </select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Quantity field */}
-                  <FormField
-                    control={form.control}
-                    name="qty"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Quantity *</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder="Enter quantity" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Rate field */}
-                  <FormField
-                    control={form.control}
-                    name="rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Rate *</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder="Enter rate" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Status field */}
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status *</FormLabel>
-                        <FormControl>
-                          <select
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            {...field}
-                          >
-                            <option value="PENDING">Pending</option>
-                            <option value="RECEIVED">Received</option>
-                            <option value="PARTIAL">Partial</option>
-                          </select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Order Date field */}
-                  <FormField
-                    control={form.control}
-                    name="orderDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Order Date *</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Address field */}
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Delivery Address</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter delivery address (optional)" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="flex justify-end pt-4">
-                    <Button type="submit" disabled={form.formState.isSubmitting}>
-                      {form.formState.isSubmitting ? 'Saving...' : 'Save Order'}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </div>
-          </SheetContent>
-        </Sheet>
+        <Button 
+          className="flex items-center gap-1"
+          onClick={() => {
+            setShowForm(true);
+            setEditRow(null);
+          }}
+        >
+          <Plus className="h-4 w-4" />
+          Add Purchase
+        </Button>
       </div>
 
       {/* Search bar */}
@@ -541,11 +600,13 @@ export default function PurchasesPage() {
                     <TableCell>₹{(purchase.qty * purchase.rate).toFixed(2)}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded text-xs ${
-                        purchase.status === 'RECEIVED' 
+                        purchase.status === 'DELIVERED' 
                           ? 'bg-green-100 text-green-800' 
-                          : purchase.status === 'PARTIAL' 
+                          : purchase.status === 'CONFIRMED' 
                             ? 'bg-yellow-100 text-yellow-800' 
-                            : 'bg-blue-100 text-blue-800'
+                            : purchase.status === 'CANCELLED'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-blue-100 text-blue-800'
                       }`}>
                         {purchase.status}
                       </span>
@@ -556,7 +617,7 @@ export default function PurchasesPage() {
                         variant="ghost"
                         onClick={() => {
                           setEditRow(purchase);
-                          setIsSheetOpen(true);
+                          setShowForm(true);
                         }}
                       >
                         <Edit className="h-4 w-4" />
@@ -610,6 +671,15 @@ export default function PurchasesPage() {
           </div>
         </div>
       )}
+    </>
+  );
+
+  // Main return with conditional rendering of either form or list
+  return (
+    <AppShell pageTitle="Purchases">
+      <div className="relative">
+        {showForm ? <PurchaseForm /> : <PurchaseListView />}
+      </div>
     </AppShell>
   );
 } 

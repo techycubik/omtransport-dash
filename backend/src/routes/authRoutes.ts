@@ -1,13 +1,17 @@
 import { Router } from 'express';
-import { requestOTP, verifyOTP } from '../controllers/authController';
+import { requestOTP, verifyOTP, listAdmins, createAdmin, getUserActivity, deactivateUser } from '../controllers/authController';
+import { isAuthenticated, isSuperAdmin } from '../middleware/authMiddleware';
 
 const router = Router();
 
+// Public routes
 router.post('/request-otp', requestOTP);
 router.post('/verify-otp', verifyOTP);
-router.post('/logout', (req, res) => {
-  // In a real app, this would invalidate the token or session
-  res.status(200).json({ message: 'Logged out successfully' });
-});
+
+// Protected routes - Super Admin only
+router.get('/admins', isAuthenticated, isSuperAdmin, listAdmins);
+router.post('/admins', isAuthenticated, isSuperAdmin, createAdmin);
+router.get('/users/:userId/activity', isAuthenticated, isSuperAdmin, getUserActivity);
+router.put('/users/:userId/deactivate', isAuthenticated, isSuperAdmin, deactivateUser);
 
 export default router; 

@@ -6,6 +6,11 @@ export interface Customer extends Model<InferAttributes<Customer>, InferCreation
   address?: string;
   gstNo?: string;
   contact?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  maps_link?: string;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
 }
@@ -31,6 +36,26 @@ export const CustomerFactory = (sequelize: Sequelize) => {
       field: 'gst_no'
     },
     contact: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    street: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    city: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    state: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    pincode: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    maps_link: {
       type: DataTypes.STRING,
       allowNull: true
     }

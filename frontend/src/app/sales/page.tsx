@@ -7,12 +7,11 @@ import { z } from 'zod';
 import AppShell from '@/components/AppShell';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus } from 'lucide-react';
+import { Plus, ArrowLeft, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -67,7 +66,7 @@ export default function SalesPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Initialize form
@@ -195,7 +194,7 @@ export default function SalesPage() {
       setSalesOrders(prevOrders => [...prevOrders, enhancedSaleOrder]);
       
       toast.success('Sale order created successfully');
-      setIsSheetOpen(false);
+      setShowForm(false);
       form.reset();
     } catch (error) {
       console.error('Error creating sale order:', error);
@@ -227,159 +226,214 @@ export default function SalesPage() {
     }
   };
 
-  return (
-    <AppShell pageTitle="Sales Orders">
+  // Full-screen Sales Form
+  const SalesForm = () => (
+    <div className="w-full">
+      <div className="mb-4 flex items-center">
+        <Button 
+          variant="ghost" 
+          onClick={() => setShowForm(false)}
+          className="mr-2"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back
+        </Button>
+        <h2 className="text-2xl font-bold">Add New Sales Order</h2>
+      </div>
+      
+      <Card className="p-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Customer field */}
+              <FormField
+                control={form.control}
+                name="customerId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Customer Name *</FormLabel>
+                    <FormControl>
+                      <select
+                        className="w-full p-2 border border-gray-200 rounded-md"
+                        {...field}
+                      >
+                        <option value={0}>Select Customer</option>
+                        {customers.map(customer => (
+                          <option key={customer.id} value={customer.id}>
+                            {customer.name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Order Date field */}
+              <FormField
+                control={form.control}
+                name="orderDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Order Date *</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} className="w-full" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Vehicle Number field */}
+              <FormField
+                control={form.control}
+                name="vehicleNo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Vehicle Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter vehicle number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Address field */}
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Delivery Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter delivery address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div>
+              <h3 className="text-base font-semibold mb-2">Item Details</h3>
+              <Card className="p-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-1/3">Material</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Rate</TableHead>
+                      <TableHead>Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>
+                        <FormField
+                          control={form.control}
+                          name="materialId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <select
+                                  className="w-full p-2 border border-gray-200 rounded-md"
+                                  {...field}
+                                >
+                                  <option value={0}>Select Material</option>
+                                  {materials.map(material => (
+                                    <option key={material.id} value={material.id}>
+                                      {material.name} ({material.uom})
+                                    </option>
+                                  ))}
+                                </select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <FormField
+                          control={form.control}
+                          name="qty"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  placeholder="0" 
+                                  {...field} 
+                                  onChange={e => field.onChange(Number(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <FormField
+                          control={form.control}
+                          name="rate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  placeholder="0" 
+                                  {...field} 
+                                  onChange={e => field.onChange(Number(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium">₹{(form.watch('qty') * form.watch('rate')).toFixed(2) || '0.00'}</span>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </Card>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowForm(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? 'Saving...' : 'Save Order'}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </Card>
+    </div>
+  );
+
+  // Sales List View
+  const SalesListView = () => (
+    <>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Sales Orders</h1>
-        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-          <SheetTrigger asChild>
-            <Button className="flex items-center gap-1">
-              <Plus className="h-4 w-4" />
-              Add Sale
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right">
-            <SheetHeader>
-              <SheetTitle>Add New Sale Order</SheetTitle>
-            </SheetHeader>
-            <div className="mt-6">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  {/* Customer field */}
-                  <FormField
-                    control={form.control}
-                    name="customerId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Customer *</FormLabel>
-                        <FormControl>
-                          <select
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            {...field}
-                          >
-                            <option value={0}>Select Customer</option>
-                            {customers.map(customer => (
-                              <option key={customer.id} value={customer.id}>
-                                {customer.name}
-                              </option>
-                            ))}
-                          </select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Material field */}
-                  <FormField
-                    control={form.control}
-                    name="materialId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Material *</FormLabel>
-                        <FormControl>
-                          <select
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            {...field}
-                          >
-                            <option value={0}>Select Material</option>
-                            {materials.map(material => (
-                              <option key={material.id} value={material.id}>
-                                {material.name} ({material.uom})
-                              </option>
-                            ))}
-                          </select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Quantity field */}
-                  <FormField
-                    control={form.control}
-                    name="qty"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Quantity *</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder="Enter quantity" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Rate field */}
-                  <FormField
-                    control={form.control}
-                    name="rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Rate *</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder="Enter rate" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Vehicle Number field */}
-                  <FormField
-                    control={form.control}
-                    name="vehicleNo"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Vehicle Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter vehicle number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Order Date field */}
-                  <FormField
-                    control={form.control}
-                    name="orderDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Order Date *</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Address field */}
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Delivery Address</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter delivery address (optional)" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="flex justify-end pt-4">
-                    <Button type="submit" disabled={form.formState.isSubmitting}>
-                      {form.formState.isSubmitting ? 'Saving...' : 'Save Order'}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </div>
-          </SheetContent>
-        </Sheet>
+        <Button 
+          onClick={() => setShowForm(true)}
+          className="flex items-center gap-1"
+        >
+          <Plus className="h-4 w-4" />
+          Add Sale
+        </Button>
       </div>
 
       {/* Error display */}
@@ -465,6 +519,15 @@ export default function SalesPage() {
           </Table>
         </div>
       </Card>
+    </>
+  );
+
+  // Main return with conditional rendering of either form or list
+  return (
+    <AppShell pageTitle="Sales Orders">
+      <div className="relative">
+        {showForm ? <SalesForm /> : <SalesListView />}
+      </div>
     </AppShell>
   );
 } 
