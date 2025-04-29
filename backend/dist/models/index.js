@@ -1,0 +1,30 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.initModels = void 0;
+const customer_1 = require("./customer");
+const vendor_1 = require("./vendor");
+const material_1 = require("./material");
+const salesorder_1 = require("./salesorder");
+const purchaseorder_1 = require("./purchaseorder");
+const crusherrun_1 = require("./crusherrun");
+const initModels = (sequelize) => {
+    const Customer = (0, customer_1.CustomerFactory)(sequelize);
+    const Vendor = (0, vendor_1.VendorFactory)(sequelize);
+    const Material = (0, material_1.MaterialFactory)(sequelize);
+    const SalesOrder = (0, salesorder_1.SalesOrderFactory)(sequelize);
+    const PurchaseOrder = (0, purchaseorder_1.PurchaseOrderFactory)(sequelize);
+    const CrusherRun = (0, crusherrun_1.CrusherRunFactory)(sequelize);
+    // Set up associations
+    Customer.hasMany(SalesOrder);
+    SalesOrder.belongsTo(Customer);
+    Vendor.hasMany(PurchaseOrder);
+    PurchaseOrder.belongsTo(Vendor);
+    Material.hasMany(SalesOrder);
+    Material.hasMany(PurchaseOrder);
+    Material.hasMany(CrusherRun);
+    SalesOrder.belongsTo(Material);
+    PurchaseOrder.belongsTo(Material);
+    CrusherRun.belongsTo(Material);
+    return sequelize.models;
+};
+exports.initModels = initModels;

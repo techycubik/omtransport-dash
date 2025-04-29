@@ -12,7 +12,7 @@
   },
   "include": [
     "**/*.ts"
-  ],
+, "src/utils/syncModels.js"  ],
   "exclude": [
     "node_modules",
     "dist"
