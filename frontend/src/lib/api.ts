@@ -27,10 +27,14 @@ export async function api(path: string, options?: RequestInit) {
         const clonedResponse = response.clone();
         const data = await clonedResponse.json();
         console.log('OTP Response:', data);
+        console.log('Environment:', process.env.NODE_ENV);
+        
         if (data.otp) {
           console.log('----------------------------------------');
           console.log('🔑 OTP CODE:', data.otp);
           console.log('----------------------------------------');
+        } else {
+          console.log('⚠️ No OTP in response. Please check backend environment settings.');
         }
       } catch (error) {
         console.error('Error reading OTP response:', error);

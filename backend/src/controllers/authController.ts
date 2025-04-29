@@ -47,6 +47,9 @@ export const requestOTP = asyncHandler(async (req: Request, res: Response) => {
   // For development, return the OTP in the response
   // In production, you should only acknowledge the request
   const isDev = process.env.NODE_ENV === 'development';
+  console.log('Current environment:', process.env.NODE_ENV);
+  console.log('Is development mode:', isDev);
+  
   res.status(200).json({ 
     message: 'OTP sent successfully',
     // Include OTP in development mode
