@@ -20,6 +20,23 @@ export async function api(path: string, options?: RequestInit) {
     
     clearTimeout(timeoutId);
     
+    // If this is an OTP request, log the response for debugging
+    if (path === '/auth/request-otp') {
+      try {
+        // We need to clone the response before reading it
+        const clonedResponse = response.clone();
+        const data = await clonedResponse.json();
+        console.log('OTP Response:', data);
+        if (data.otp) {
+          console.log('----------------------------------------');
+          console.log('🔑 OTP CODE:', data.otp);
+          console.log('----------------------------------------');
+        }
+      } catch (error) {
+        console.error('Error reading OTP response:', error);
+      }
+    }
+    
     return response;
   } catch (error) {
     console.error(`API request failed for ${url}:`, error);

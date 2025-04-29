@@ -40,14 +40,17 @@ export const requestOTP = asyncHandler(async (req: Request, res: Response) => {
   otpStore[email] = { otp, expiresAt };
   
   // In a real application, you would send this via email
+  console.log('===============================================');
   console.log(`OTP for ${email}: ${otp}`);
+  console.log('===============================================');
   
   // For development, return the OTP in the response
   // In production, you should only acknowledge the request
+  const isDev = process.env.NODE_ENV === 'development';
   res.status(200).json({ 
     message: 'OTP sent successfully',
-    // Remove this in production!
-    otp: otp
+    // Include OTP in development mode
+    ...(isDev ? { otp } : {})
   });
 });
 

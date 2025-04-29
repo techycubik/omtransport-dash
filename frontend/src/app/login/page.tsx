@@ -28,11 +28,16 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await requestOTP(email);
+      const result = await requestOTP(email);
       
       // In development, show toast with OTP info
       if (process.env.NODE_ENV === 'development') {
-        toast.success('OTP sent! Check console for development OTP');
+        toast.success(`OTP sent! Code: ${result?.otp || 'Check console for OTP'}`);
+        
+        // If we have the OTP, auto-fill it for testing
+        if (result?.otp) {
+          setOtp(result.otp);
+        }
       } else {
         toast.success('OTP sent to your email');
       }

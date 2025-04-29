@@ -19,7 +19,7 @@ type AuthState = {
 };
 
 type AuthContextType = AuthState & {
-  requestOTP: (email: string) => Promise<void>;
+  requestOTP: (email: string) => Promise<any>;
   login: (email: string, otp: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -81,7 +81,8 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
       }
 
       setState(prev => ({ ...prev, loading: false }));
-      return await response.json();
+      const data = await response.json();
+      return data;
     } catch (error) {
       setState(prev => ({ ...prev, loading: false }));
       console.error('Request OTP error:', error);
