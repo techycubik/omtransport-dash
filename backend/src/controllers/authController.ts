@@ -3,6 +3,7 @@ import asyncHandler from '../utils/asyncHandler';
 import { UserModel, UserAuditLogModel } from '../models';
 import { AuditAction } from '../../models/userAuditLog';
 import { UserRole } from '../../models/user';
+import '../types'; // Import the Express type extensions
 
 // Simple in-memory OTP storage (replace with a proper DB table in production)
 const otpStore: Record<string, { otp: string, expiresAt: Date }> = {};
@@ -85,7 +86,7 @@ export const verifyOTP = asyncHandler(async (req: Request, res: Response) => {
   
   // Create login audit log
   await UserAuditLogModel.create({
-    userId: user.id,
+    userId: user.id as number, // Add type assertion here
     action: AuditAction.LOGIN,
     ipAddress: ipAddress
   });
@@ -162,7 +163,7 @@ export const createAdmin = asyncHandler(async (req: Request, res: Response) => {
     userId: requesterId,
     action: AuditAction.CREATE,
     entityType: 'User',
-    entityId: newAdmin.id,
+    entityId: newAdmin.id as number, // Add type assertion
     changes: { email, name, role: UserRole.ADMIN },
     ipAddress
   });
@@ -179,6 +180,7 @@ export const createAdmin = asyncHandler(async (req: Request, res: Response) => {
 
 export const getUserActivity = asyncHandler(async (req: Request, res: Response) => {
   const { userId } = req.params;
+  // Use non-null assertion since we check for it right after
   const requesterId = req.user?.id;
   
   if (!requesterId) {
@@ -192,9 +194,14 @@ export const getUserActivity = asyncHandler(async (req: Request, res: Response) 
     return res.status(403).json({ error: 'Only super admins can view user activity' });
   }
   
-  // Get audit logs for the specified user
+  // Get audit logs for the specified user - safely parse userId
+  const userIdNum = parseInt(userId);
+  if (isNaN(userIdNum)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+  
   const auditLogs = await UserAuditLogModel.findAll({
-    where: { userId },
+    where: { userId: userIdNum },
     order: [['createdAt', 'DESC']],
     limit: 100
   });
@@ -207,7 +214,13 @@ export const deactivateUser = asyncHandler(async (req: Request, res: Response) =
   const requesterId = req.user?.id;
   const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
   
-  if (!requesterId || parseInt(userId) === requesterId) {
+  // Safely parse userId
+  const userIdNum = parseInt(userId);
+  if (isNaN(userIdNum)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+  
+  if (!requesterId || userIdNum === requesterId) {
     return res.status(400).json({ error: 'Cannot deactivate yourself' });
   }
   
@@ -219,7 +232,7 @@ export const deactivateUser = asyncHandler(async (req: Request, res: Response) =
   }
   
   // Get user to deactivate
-  const userToDeactivate = await UserModel.findByPk(userId);
+  const userToDeactivate = await UserModel.findByPk(userIdNum);
   
   if (!userToDeactivate) {
     return res.status(404).json({ error: 'User not found' });
@@ -244,7 +257,7 @@ export const deactivateUser = asyncHandler(async (req: Request, res: Response) =
     userId: requesterId,
     action: AuditAction.UPDATE,
     entityType: 'User',
-    entityId: parseInt(userId),
+    entityId: userIdNum,
     changes: { isActive: false },
     ipAddress
   });

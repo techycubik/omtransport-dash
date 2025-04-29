@@ -2,12 +2,6 @@ import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 import initUserModel from '../../models/user';
 import initUserAuditLogModel from '../../models/userAuditLog';
-import { Material } from '../../models/material';
-import { Customer } from '../../models/customer';
-import { Vendor } from '../../models/vendor';
-import { SalesOrder } from '../../models/salesorder';
-import { PurchaseOrder } from '../../models/purchaseorder';
-import { CrusherRun } from '../../models/crusherrun';
 
 // Load environment variables
 dotenv.config();
@@ -27,15 +21,7 @@ const sequelize = new Sequelize({
 const UserModel = initUserModel(sequelize);
 const UserAuditLogModel = initUserAuditLogModel(sequelize);
 
-// Initialize existing models
-const MaterialModel = sequelize.models.Material;
-const CustomerModel = sequelize.models.Customer;
-const VendorModel = sequelize.models.Vendor;
-const SalesOrderModel = sequelize.models.SalesOrder;
-const PurchaseOrderModel = sequelize.models.PurchaseOrder;
-const CrusherRunModel = sequelize.models.CrusherRun;
-
-// Define associations
+// Define User associations
 UserModel.hasMany(UserAuditLogModel, {
   foreignKey: 'user_id',
   as: 'auditLogs'
@@ -45,51 +31,69 @@ UserAuditLogModel.belongsTo(UserModel, {
   as: 'user'
 });
 
-// Other model associations...
-CustomerModel.hasMany(SalesOrderModel, {
-  foreignKey: 'customer_id',
-  as: 'salesOrders'
-});
-SalesOrderModel.belongsTo(CustomerModel, {
-  foreignKey: 'customer_id',
-  as: 'customer'
-});
+// Initialize existing models safely
+const MaterialModel = sequelize.models.Material;
+const CustomerModel = sequelize.models.Customer;
+const VendorModel = sequelize.models.Vendor;
+const SalesOrderModel = sequelize.models.SalesOrder;
+const PurchaseOrderModel = sequelize.models.PurchaseOrder;
+const CrusherRunModel = sequelize.models.CrusherRun;
 
-MaterialModel.hasMany(SalesOrderModel, {
-  foreignKey: 'material_id',
-  as: 'salesOrders'
-});
-SalesOrderModel.belongsTo(MaterialModel, {
-  foreignKey: 'material_id',
-  as: 'material'
-});
+// Define other associations only if models exist
+if (CustomerModel && SalesOrderModel) {
+  CustomerModel.hasMany(SalesOrderModel, {
+    foreignKey: 'customer_id',
+    as: 'salesOrders'
+  });
+  SalesOrderModel.belongsTo(CustomerModel, {
+    foreignKey: 'customer_id',
+    as: 'customer'
+  });
+}
 
-VendorModel.hasMany(PurchaseOrderModel, {
-  foreignKey: 'vendor_id',
-  as: 'purchaseOrders'
-});
-PurchaseOrderModel.belongsTo(VendorModel, {
-  foreignKey: 'vendor_id',
-  as: 'vendor'
-});
+if (MaterialModel && SalesOrderModel) {
+  MaterialModel.hasMany(SalesOrderModel, {
+    foreignKey: 'material_id',
+    as: 'salesOrders'
+  });
+  SalesOrderModel.belongsTo(MaterialModel, {
+    foreignKey: 'material_id',
+    as: 'material'
+  });
+}
 
-MaterialModel.hasMany(PurchaseOrderModel, {
-  foreignKey: 'material_id',
-  as: 'purchaseOrders'
-});
-PurchaseOrderModel.belongsTo(MaterialModel, {
-  foreignKey: 'material_id',
-  as: 'material'
-});
+if (VendorModel && PurchaseOrderModel) {
+  VendorModel.hasMany(PurchaseOrderModel, {
+    foreignKey: 'vendor_id',
+    as: 'purchaseOrders'
+  });
+  PurchaseOrderModel.belongsTo(VendorModel, {
+    foreignKey: 'vendor_id',
+    as: 'vendor'
+  });
+}
 
-MaterialModel.hasMany(CrusherRunModel, {
-  foreignKey: 'material_id',
-  as: 'crusherRuns'
-});
-CrusherRunModel.belongsTo(MaterialModel, {
-  foreignKey: 'material_id',
-  as: 'material'
-});
+if (MaterialModel && PurchaseOrderModel) {
+  MaterialModel.hasMany(PurchaseOrderModel, {
+    foreignKey: 'material_id',
+    as: 'purchaseOrders'
+  });
+  PurchaseOrderModel.belongsTo(MaterialModel, {
+    foreignKey: 'material_id',
+    as: 'material'
+  });
+}
+
+if (MaterialModel && CrusherRunModel) {
+  MaterialModel.hasMany(CrusherRunModel, {
+    foreignKey: 'material_id',
+    as: 'crusherRuns'
+  });
+  CrusherRunModel.belongsTo(MaterialModel, {
+    foreignKey: 'material_id',
+    as: 'material'
+  });
+}
 
 // Export models and sequelize
 export {

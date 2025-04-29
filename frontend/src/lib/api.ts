@@ -5,16 +5,28 @@ export async function api(path: string, options?: RequestInit) {
   const isAuthRoute = path.startsWith('/auth');
   const url = isAuthRoute ? `${API}${path}` : `${API}${path.startsWith('/') ? path : '/' + path}`;
   
+  console.log(`Fetching from: ${url}`);
+  
   try {
-    console.log(`Fetching from: ${url}`);
+    // Add a timeout to avoid hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const response = await fetch(url, {
       credentials: 'include',
+      signal: controller.signal,
       ...options
     });
+    
+    clearTimeout(timeoutId);
     
     return response;
   } catch (error) {
     console.error(`API request failed for ${url}:`, error);
+    // Check if it's an AbortError (timeout)
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Request to ${url} timed out after 10 seconds`);
+    }
     throw error;
   }
 } 

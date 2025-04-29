@@ -3,6 +3,7 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import { Sequelize } from 'sequelize';
 import { initModels } from '../models';
+import './types'; // Import the types that extend Express Request
 
 export const app: Express = express();
 export const sequelize = new Sequelize({
