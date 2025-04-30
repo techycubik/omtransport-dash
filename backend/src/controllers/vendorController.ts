@@ -14,8 +14,17 @@ const vendorSchema = z.object({
 });
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const vendors = await Vendor.findAll();
-  res.json(vendors);
+  try {
+    const vendors = await Vendor.findAll();
+    res.json(vendors);
+  } catch (error) {
+    console.error('Error fetching vendors:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch vendors', 
+      details: error instanceof Error ? error.message : String(error),
+      stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : null) : undefined
+    });
+  }
 });
 
 export const create = asyncHandler(async (req: Request, res: Response) => {
@@ -31,7 +40,11 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
     res.status(201).json(vendor);
   } catch (error) {
     console.error('Error creating vendor:', error);
-    res.status(500).json({ error: 'Failed to create vendor', details: error });
+    res.status(500).json({ 
+      error: 'Failed to create vendor', 
+      details: error instanceof Error ? error.message : String(error),
+      stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : null) : undefined
+    });
   }
 });
 
@@ -56,6 +69,10 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
     res.json(vendor);
   } catch (error) {
     console.error('Error updating vendor:', error);
-    res.status(500).json({ error: 'Failed to update vendor', details: error });
+    res.status(500).json({ 
+      error: 'Failed to update vendor', 
+      details: error instanceof Error ? error.message : String(error),
+      stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : null) : undefined
+    });
   }
 }); 

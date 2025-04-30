@@ -9,8 +9,42 @@ module.exports = {
         primaryKey: true,
         allowNull: false
       },
-      // Add model-specific fields here
-      
+      name: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
+      contact: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      gstNo: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      address: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      street: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      city: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      state: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      pincode: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      maps_link: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
