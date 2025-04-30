@@ -522,7 +522,7 @@ export default function PurchasesPage() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Purchase Orders</h1>
         <Button 
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white"
           onClick={() => {
             setShowForm(true);
             setEditRow(null);
@@ -537,10 +537,11 @@ export default function PurchasesPage() {
       <div className="mb-4 relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input 
-          placeholder="Search by vendor, material or status..." 
+          placeholder="    Search by vendor, material or status..." 
           value={searchTerm}
+          
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
+          className=" bg-gray-50 border-b border-gray-200 text-gray-700 "
         />
       </div>
 
@@ -560,19 +561,19 @@ export default function PurchasesPage() {
       )}
 
       {/* Purchases Table */}
-      <Card>
+      <Card className='bg-white border border-gray-200'>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Vendor</TableHead>
-                <TableHead>Material</TableHead>
-                <TableHead>Qty</TableHead>
-                <TableHead>Rate</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow className="bg-gray-50 border-b border-gray-200">
+                <TableHead className="w-[80px] text-gray-700 font-semibold">Vendor</TableHead>
+                <TableHead className="text-gray-700 font-semibold">Material</TableHead>
+                <TableHead className="text-gray-700 font-semibold">Qty</TableHead>
+                <TableHead className="text-gray-700 font-semibold">Rate</TableHead>
+                <TableHead className="text-gray-700 font-semibold">Amount</TableHead>
+                <TableHead className="text-gray-700 font-semibold">Status</TableHead>
+                <TableHead className="text-gray-700 font-semibold">Date</TableHead>
+                <TableHead className="text-gray-700 font-semibold text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -584,7 +585,7 @@ export default function PurchasesPage() {
                 </TableRow>
               ) : filteredPurchases.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-6 text-gray-500">
+                  <TableCell colSpan={8} className="text-center py-6 text-gray-600">
                     {searchTerm.trim() !== '' 
                       ? 'No purchase orders match your search.' 
                       : 'No purchase orders found. Click "Add Purchase" to create one.'}
@@ -592,12 +593,12 @@ export default function PurchasesPage() {
                 </TableRow>
               ) : (
                 filteredPurchases.map((purchase) => (
-                  <TableRow key={purchase.id}>
-                    <TableCell>{purchase.Vendor?.name || 'Unknown'}</TableCell>
-                    <TableCell>{purchase.Material?.name || 'Unknown'}</TableCell>
-                    <TableCell>{purchase.qty} {purchase.Material?.uom}</TableCell>
-                    <TableCell>₹{purchase.rate.toFixed(2)}</TableCell>
-                    <TableCell>₹{(purchase.qty * purchase.rate).toFixed(2)}</TableCell>
+                  <TableRow key={purchase.id} className="hover:bg-gray-50 border-b border-gray-200">
+                    <TableCell className="text-gray-800">{purchase.Vendor?.name || 'Unknown'}</TableCell>
+                    <TableCell className="text-gray-800">{purchase.Material?.name || 'Unknown'}</TableCell>
+                    <TableCell className="text-gray-800">{purchase.qty} {purchase.Material?.uom}</TableCell>
+                    <TableCell className="text-gray-800">₹{purchase.rate.toFixed(2)}</TableCell>
+                    <TableCell className="text-gray-800">₹{(purchase.qty * purchase.rate).toFixed(2)}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded text-xs ${
                         purchase.status === 'DELIVERED' 
@@ -611,10 +612,11 @@ export default function PurchasesPage() {
                         {purchase.status}
                       </span>
                     </TableCell>
-                    <TableCell>{formatDate(purchase.orderDate)}</TableCell>
-                    <TableCell className="text-right space-x-2">
+                    <TableCell className="text-gray-800">{formatDate(purchase.orderDate)}</TableCell>
+                    <TableCell className="text-center space-x-2">
                       <Button
                         variant="ghost"
+                        className="text-blue-600 border-blue-200 hover:bg-blue-50" 
                         onClick={() => {
                           setEditRow(purchase);
                           setShowForm(true);

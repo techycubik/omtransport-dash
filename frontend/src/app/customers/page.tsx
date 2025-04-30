@@ -237,12 +237,12 @@ export default function CustomersPage() {
             setEditingCustomer(null);
             form.reset();
           }}
-          className="mr-2"
+          className="mr-2 text-gray-800"
         >
-          <ArrowLeft className="h-4 w-4 mr-1" />
+          <ArrowLeft className="h-4 w-4 mr-1 text-gray-800" />
           Back
         </Button>
-        <h2 className="text-2xl font-bold">
+        <h2 className="text-2xl font-bold text-gray-800">
           {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
         </h2>
       </div>
@@ -435,7 +435,7 @@ export default function CustomersPage() {
         <h1 className="text-2xl font-bold">Customers</h1>
         <Button 
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white"
         >
           <Plus className="h-4 w-4" />
           Add Customer
@@ -461,25 +461,25 @@ export default function CustomersPage() {
       <div className="mb-4 relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input 
-          placeholder="Search by name, contact or address..." 
+          placeholder="    Search by name, contact or address..." 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
+          className=" bg-gray-50 border-b border-gray-200 text-gray-700 "
         />
       </div>
 
       {/* Customers Table */}
-      <Card>
+      <Card className="bg-white border border-gray-200">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>GST Number</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Actions</TableHead>
+              <TableRow className="bg-gray-50 border-b border-gray-200">
+                <TableHead className="w-[80px] text-gray-700 font-semibold">ID</TableHead>
+                <TableHead className="text-gray-700 font-semibold">Name</TableHead>
+                <TableHead className="text-gray-700 font-semibold">GST Number</TableHead>
+                <TableHead className="text-gray-700 font-semibold">Address</TableHead>
+                <TableHead className="text-gray-700 font-semibold">Contact</TableHead>
+                <TableHead className="text-gray-700 font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -491,16 +491,16 @@ export default function CustomersPage() {
                 </TableRow>
               ) : filteredCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-slate-500">
+                  <TableCell colSpan={6} className="text-center py-6 text-gray-600">
                     {searchTerm ? 'No customers match your search.' : 'No customers found. Add your first customer to get started.'}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredCustomers.map(customer => (
-                  <TableRow key={customer.id} className="hover:bg-gray-50">
-                    <TableCell className="font-medium">{customer.id}</TableCell>
-                    <TableCell>{customer.name}</TableCell>
-                    <TableCell>{customer.gstNo || '-'}</TableCell>
+                  <TableRow key={customer.id} className="hover:bg-gray-50 border-b border-gray-200">
+                    <TableCell className="text-gray-800">{customer.id}</TableCell>
+                    <TableCell className="font-medium text-gray-800">{customer.name}</TableCell>
+                    <TableCell className="text-gray-800">{customer.gstNo || '-'}</TableCell>
                     <TableCell>
                       {customer.street && <div>{customer.street}</div>}
                       {(customer.city || customer.state || customer.pincode) && (
@@ -528,7 +528,7 @@ export default function CustomersPage() {
                     </TableCell>
                     <TableCell>{customer.contact || '-'}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(customer)}>
+                      <Button variant="ghost" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => handleEdit(customer)}>
                         <Edit className="h-4 w-4" />
                       </Button>
                     </TableCell>
