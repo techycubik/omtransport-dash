@@ -49,6 +49,16 @@ module.exports = {
         isActive: true,
         created_at: now,
         updated_at: now
+      },
+      {
+        firstName: 'Super',
+        lastName: 'Admin',
+        email: 'viganeshgulekar2205@gmail.com',
+        password: hashedPassword,
+        role: roleToUse,
+        isActive: true,
+        created_at: now,
+        updated_at: now
       }]);
 
       console.log('Superadmin user created successfully');

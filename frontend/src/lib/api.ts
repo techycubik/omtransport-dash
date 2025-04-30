@@ -3,7 +3,12 @@ export const API = process.env.NEXT_PUBLIC_API_URL ?? 'https://omtransport-dash.
 export async function api(path: string, options?: RequestInit) {
   // Don't add /api prefix for auth routes
   const isAuthRoute = path.startsWith('/auth');
-  const url = isAuthRoute ? `${API}${path}` : `${API}${path.startsWith('/') ? path : '/' + path}`;
+  
+  // Ensure path starts with a slash and API doesn't end with one
+  const formattedPath = path.startsWith('/') ? path : '/' + path;
+  const baseUrl = API.endsWith('/') ? API.slice(0, -1) : API;
+  
+  const url = `${baseUrl}${formattedPath}`;
   
   console.log(`Fetching from: ${url}`);
   
