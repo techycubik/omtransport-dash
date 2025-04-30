@@ -1,4 +1,4 @@
-export const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+export const API = process.env.NEXT_PUBLIC_API_URL ?? 'https://omtransport-dash.onrender.com';
 
 export async function api(path: string, options?: RequestInit) {
   // Don't add /api prefix for auth routes

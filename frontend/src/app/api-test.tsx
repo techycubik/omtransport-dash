@@ -11,7 +11,7 @@ export default function ApiTest() {
   const testCustomersApi = async () => {
     setCustomersResponse('Testing...');
     try {
-      const response = await fetch('http://localhost:4000/api/customers', {
+      const response = await fetch('https://omtransport-dash.onrender.com/api/customers', {
         credentials: 'include'
       });
       const data = await response.json();
@@ -24,7 +24,7 @@ export default function ApiTest() {
   const testMaterialsApi = async () => {
     setMaterialsResponse('Testing...');
     try {
-      const response = await fetch('http://localhost:4000/api/materials', {
+      const response = await fetch('https://omtransport-dash.onrender.com/api/materials', {
         credentials: 'include'
       });
       const data = await response.json();

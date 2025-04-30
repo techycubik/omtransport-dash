@@ -40,7 +40,7 @@ This project includes Docker configuration for easy deployment.
 
 3. Access the application:
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:4000
+   - Backend API: https://omtransport-dash.onrender.com
 
 4. To stop the application:
    ```bash
@@ -239,7 +239,7 @@ For more control, you can deploy to a VPS (Virtual Private Server).
        }
 
        location /api {
-           proxy_pass http://localhost:4000;
+           proxy_pass https://omtransport-dash.onrender.com;
            proxy_http_version 1.1;
            proxy_set_header Upgrade $http_upgrade;
            proxy_set_header Connection 'upgrade';
@@ -281,4 +281,4 @@ For more control, you can deploy to a VPS (Virtual Private Server).
 
 | Variable              | Description                 | Default Value        |
 |-----------------------|-----------------------------|----------------------|
-| NEXT_PUBLIC_API_URL   | URL of the backend API      | http://localhost:4000 | 
+| NEXT_PUBLIC_API_URL   | URL of the backend API      | https://omtransport-dash.onrender.com | 

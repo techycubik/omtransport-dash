@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   try {
     console.log('API route: Fetching materials from backend');
-    const response = await fetch('http://localhost:4000/api/materials', {
+    const response = await fetch('https://omtransport-dash.onrender.com/api/materials', {
       headers: {
         'Accept': 'application/json',
       },

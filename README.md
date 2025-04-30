@@ -62,7 +62,7 @@ A full-stack management system for OM Transport featuring sales orders, purchase
    pnpm run dev
    ```
 
-   The backend will be available at http://localhost:4000
+   The backend will be available at https://omtransport-dash.onrender.com
 
 ### Frontend Setup
 
@@ -78,7 +78,7 @@ A full-stack management system for OM Transport featuring sales orders, purchase
 
 3. Create a `.env.local` file in the frontend directory with the following content:
    ```
-   NEXT_PUBLIC_API_URL=http://localhost:4000
+   NEXT_PUBLIC_API_URL=https://omtransport-dash.onrender.com
    ```
 
 4. Start the frontend development server:
