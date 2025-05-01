@@ -5,6 +5,8 @@ import { MaterialFactory } from './material';
 import { SalesOrderFactory } from './salesorder';
 import { PurchaseOrderFactory } from './purchaseorder';
 import { CrusherRunFactory } from './crusherrun';
+import { CrusherMachineFactory } from './crusherMachine';
+import { DispatchFactory } from './dispatch';
 
 export const initModels = (sequelize: Sequelize) => {
   const Customer = CustomerFactory(sequelize);
@@ -13,6 +15,8 @@ export const initModels = (sequelize: Sequelize) => {
   const SalesOrder = SalesOrderFactory(sequelize);
   const PurchaseOrder = PurchaseOrderFactory(sequelize);
   const CrusherRun = CrusherRunFactory(sequelize);
+  const CrusherMachine = CrusherMachineFactory(sequelize);
+  const Dispatch = DispatchFactory(sequelize);
 
   // Set up associations
   Customer.hasMany(SalesOrder);
@@ -29,5 +33,15 @@ export const initModels = (sequelize: Sequelize) => {
   PurchaseOrder.belongsTo(Material);
   CrusherRun.belongsTo(Material);
 
+  // New associations
+  CrusherMachine.hasMany(CrusherRun);
+  CrusherRun.belongsTo(CrusherMachine);
+
+  CrusherRun.hasMany(Dispatch);
+  Dispatch.belongsTo(CrusherRun);
+
+  SalesOrder.hasMany(Dispatch);
+  Dispatch.belongsTo(SalesOrder, { foreignKey: 'salesOrderId', constraints: false });
+
   return sequelize.models;
-}; 
+};

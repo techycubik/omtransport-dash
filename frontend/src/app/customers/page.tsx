@@ -54,7 +54,18 @@ interface Customer {
 // Define the form schema
 const customerSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  gstNo: z.string().optional(),
+  gstNo: z
+    .string()
+    .optional()
+    .refine((value) => !value || validateGSTNumber(value), {
+      message:
+        "Invalid GST number format. It should be in the format: 22AAAAA0000A1Z5",
+    })
+    .refine(
+      (value) =>
+        !value || !validateGSTNumber(value) || getStateFromGST(value) !== null,
+      { message: "Invalid state code in the GST number" }
+    ),
   address: z.string().optional(),
   contact: z.string().optional(),
   street: z.string().optional(),
@@ -63,6 +74,63 @@ const customerSchema = z.object({
   pincode: z.string().optional(),
   maps_link: z.string().optional(),
 });
+
+// Function to validate GST number format
+const validateGSTNumber = (gst: string): boolean => {
+  // GST format: 2 digits state code + 10 char PAN + 1 entity number + 1 Z + 1 check digit
+  const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+  return gstRegex.test(gst);
+};
+
+// Function to get state name from GST state code
+const getStateFromGST = (gst: string): string | null => {
+  if (!gst || gst.length < 2) return null;
+
+  const stateCode = gst.substring(0, 2);
+  const states: { [key: string]: string } = {
+    "01": "Jammu and Kashmir",
+    "02": "Himachal Pradesh",
+    "03": "Punjab",
+    "04": "Chandigarh",
+    "05": "Uttarakhand",
+    "06": "Haryana",
+    "07": "Delhi",
+    "08": "Rajasthan",
+    "09": "Uttar Pradesh",
+    "10": "Bihar",
+    "11": "Sikkim",
+    "12": "Arunachal Pradesh",
+    "13": "Nagaland",
+    "14": "Manipur",
+    "15": "Mizoram",
+    "16": "Tripura",
+    "17": "Meghalaya",
+    "18": "Assam",
+    "19": "West Bengal",
+    "20": "Jharkhand",
+    "21": "Odisha",
+    "22": "Chhattisgarh",
+    "23": "Madhya Pradesh",
+    "24": "Gujarat",
+    "26": "Dadra and Nagar Haveli and Daman and Diu",
+    "27": "Maharashtra",
+    "28": "Andhra Pradesh",
+    "29": "Karnataka",
+    "30": "Goa",
+    "31": "Lakshadweep",
+    "32": "Kerala",
+    "33": "Tamil Nadu",
+    "34": "Puducherry",
+    "35": "Andaman and Nicobar Islands",
+    "36": "Telangana",
+    "37": "Andhra Pradesh (New)",
+    "38": "Ladakh",
+    "97": "Other Territory",
+    "99": "Centre Jurisdiction",
+  };
+
+  return states[stateCode] || null;
+};
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
 
@@ -297,10 +365,7 @@ export default function CustomersPage() {
   // Form component - use this pattern consistently across all forms
   const CustomerForm = () => (
     <div className="w-full">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">
-          {editingCustomer ? "Edit Customer" : "Add New Customer"}
-        </h1>
+      <div className="mb-4 flex flex-col items-start">
         <Button
           variant="ghost"
           onClick={() => {
@@ -308,11 +373,14 @@ export default function CustomersPage() {
             setEditingCustomer(null);
             form.reset();
           }}
-          className="mr-2 text-gray-800"
+          className="mb-2 text-gray-800"
         >
           <ArrowLeft className="h-4 w-4 mr-1 text-gray-800" />
           Back
         </Button>
+        <h1 className="text-2xl font-bold text-gray-800">
+          {editingCustomer ? "Edit Customer" : "Add New Customer"}
+        </h1>
       </div>
 
       <Card className="p-10 bg-white border border-gray-200">
@@ -348,12 +416,73 @@ export default function CustomersPage() {
                       GST Number
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        className="p-3 bg-white text-gray-800 placeholder:text-gray-400 placeholder:font-thin border-gray-300"
-                        placeholder="Enter GST number"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          className={`p-3 text-gray-800 placeholder:text-gray-400 placeholder:font-thin border-gray-300 ${
+                            field.value &&
+                            (validateGSTNumber(field.value)
+                              ? "border-green-400 bg-green-50/20"
+                              : "border-red-400 bg-red-50/20")
+                          }`}
+                          placeholder="Enter GST number (e.g., 22AAAAA0000A1Z5)"
+                          {...field}
+                          onChange={(e) => {
+                            // Convert to uppercase
+                            const value = e.target.value.toUpperCase();
+                            e.target.value = value;
+                            field.onChange(e);
+                          }}
+                        />
+                        {field.value && (
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            {validateGSTNumber(field.value) ? (
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5 text-green-500"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5 text-red-500"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </FormControl>
+                    {field.value && field.value.length >= 2 && (
+                      <div className="mt-1">
+                        {getStateFromGST(field.value) ? (
+                          <p className="text-xs text-green-600">
+                            State: {getStateFromGST(field.value)}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-red-600">
+                            Invalid state code
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-300 mt-1">
+                      GST format: 2 digits state code + 5 char PAN + 4 digit PAN
+                      + 1 entity number + Z + check digit
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -498,7 +627,7 @@ export default function CustomersPage() {
                               href={field.value}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="bg-blue-500 hover:bg-blue-600 text-white px-3 flex items-center justify-center rounded-r-md"
+                              className="bg-teal-500 hover:bg-teal-600 text-white px-3 flex items-center justify-center rounded-r-md"
                             >
                               <SquareArrowOutUpRight className="h-4 w-4" />
                             </a>
@@ -546,7 +675,7 @@ export default function CustomersPage() {
               </Button>
               <Button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-teal-600 hover:bg-teal-700 text-white"
                 disabled={form.formState.isSubmitting}
               >
                 {form.formState.isSubmitting
@@ -569,7 +698,7 @@ export default function CustomersPage() {
         <div></div>
         <Button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white"
+          className="flex items-center gap-1 bg-teal-600 hover:bg-teal-700 text-white"
         >
           <Plus className="h-4 w-4" />
           Add Customer
@@ -583,7 +712,7 @@ export default function CustomersPage() {
           <p>{error}</p>
           <Button
             variant="link"
-            className="mt-3 text-blue-500"
+            className="mt-3 text-teal-500"
             onClick={() => fetchCustomers()}
           >
             Retry
@@ -682,7 +811,7 @@ export default function CustomersPage() {
                           href={customer.maps_link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline text-sm block mt-1 flex items-center"
+                          className="text-teal-600 hover:underline text-sm block mt-1 flex items-center"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -714,7 +843,7 @@ export default function CustomersPage() {
                     <TableCell className="text-center space-x-2">
                       <Button
                         variant="ghost"
-                        className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                        className="text-teal-600 border-teal-200 hover:bg-teal-50"
                         onClick={() => handleEdit(customer)}
                       >
                         <Edit className="h-4 w-4" />
@@ -774,7 +903,7 @@ export default function CustomersPage() {
 
   // Use this consistent pattern for conditional rendering
   return (
-    <AppShell pageTitle="Customers">
+    <AppShell pageTitle={showForm ? "" : "Customers"}>
       <div className="relative bg-white p-6">
         {showForm ? <CustomerForm /> : <CustomerListView />}
       </div>

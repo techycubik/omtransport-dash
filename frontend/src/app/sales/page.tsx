@@ -290,18 +290,18 @@ export default function SalesPage() {
   // Full-screen Sales Form
   const SalesForm = () => (
     <div className="w-full">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Add New Sales Order
-        </h1>
+      <div className="mb-4 flex flex-col items-start">
         <Button
           variant="ghost"
           onClick={() => setShowForm(false)}
-          className="mr-2 text-gray-800"
+          className="mb-2 text-gray-800"
         >
           <ArrowLeft className="h-4 w-4 mr-1 text-gray-800" />
           Back
         </Button>
+        <h1 className="text-2xl font-bold text-gray-800">
+          Add New Sales Order
+        </h1>
       </div>
 
       <Card className="p-10 bg-white border border-gray-200">
@@ -516,7 +516,7 @@ export default function SalesPage() {
                 Cancel
               </Button>
               <Button
-                className="bg-blue-600 hover:bg-blue-700 text-white "
+                className="bg-teal-600 hover:bg-teal-700 text-white "
                 type="submit"
                 disabled={form.formState.isSubmitting}
               >
@@ -536,7 +536,7 @@ export default function SalesPage() {
         <div></div>
         <Button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white"
+          className="flex items-center gap-1 bg-teal-600 hover:bg-teal-700 text-white"
         >
           <Plus className="h-4 w-4" />
           Add Sale
@@ -682,7 +682,7 @@ export default function SalesPage() {
 
   // Main return with conditional rendering of either form or list
   return (
-    <AppShell pageTitle="Sales Orders">
+    <AppShell pageTitle={showForm ? "" : "Sales Orders"}>
       <div className="relative bg-white p-6">
         {showForm ? <SalesForm /> : <SalesListView />}
       </div>

@@ -102,16 +102,16 @@ export default function MaterialsPage() {
   // Material Form component
   const MaterialForm = () => (
     <div className="w-full">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Add New Material</h1>
+      <div className="mb-4 flex flex-col items-start">
         <Button
           variant="ghost"
           onClick={() => setShowForm(false)}
-          className="mr-2 text-gray-800"
+          className="mb-2 text-gray-800"
         >
           <ArrowLeft className="h-4 w-4 mr-1 text-gray-800" />
           Back
         </Button>
+        <h1 className="text-2xl font-bold text-gray-800">Add New Material</h1>
       </div>
 
       <Card className="p-10 bg-white border border-gray-200">
@@ -166,7 +166,7 @@ export default function MaterialsPage() {
               </Button>
               <Button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-teal-600 hover:bg-teal-700 text-white"
                 disabled={form.formState.isSubmitting}
               >
                 {form.formState.isSubmitting ? "Saving..." : "Save Material"}
@@ -184,7 +184,7 @@ export default function MaterialsPage() {
       <div className="mb-6 flex items-center justify-between">
         <div></div>
         <Button
-          className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white"
+          className="flex items-center gap-1 bg-teal-600 hover:bg-teal-700 text-white"
           onClick={() => setShowForm(true)}
         >
           <Plus className="h-4 w-4" />
@@ -254,7 +254,7 @@ export default function MaterialsPage() {
 
   // Render the materials page
   return (
-    <AppShell pageTitle="Materials">
+    <AppShell pageTitle={showForm ? "" : "Materials"}>
       <div className="relative bg-white p-6">
         {showForm ? <MaterialForm /> : <MaterialsListView />}
       </div>

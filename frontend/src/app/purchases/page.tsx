@@ -361,10 +361,7 @@ export default function PurchasesPage() {
   // Full-screen Purchase Form
   const PurchaseForm = () => (
     <div className="w-full">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">
-          {editRow ? "Edit Purchase Order" : "Add New Purchase Order"}
-        </h1>
+      <div className="mb-4 flex flex-col items-start">
         <Button
           variant="ghost"
           onClick={() => {
@@ -372,11 +369,14 @@ export default function PurchasesPage() {
             setEditRow(null);
             form.reset();
           }}
-          className="mr-2 text-gray-800"
+          className="mb-2 text-gray-800"
         >
           <ArrowLeft className="h-4 w-4 mr-1 text-gray-800" />
           Back
         </Button>
+        <h1 className="text-2xl font-bold text-gray-800">
+          {editRow ? "Edit Purchase Order" : "Add New Purchase Order"}
+        </h1>
       </div>
 
       <Card className="p-10 bg-white border border-gray-200">
@@ -585,7 +585,7 @@ export default function PurchasesPage() {
               </Card>
             </div>
 
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end mt-6 space-x-3">
               <Button
                 type="button"
                 variant="outline"
@@ -600,7 +600,7 @@ export default function PurchasesPage() {
               <Button
                 type="submit"
                 disabled={form.formState.isSubmitting}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-teal-600 hover:bg-teal-700 text-white"
               >
                 {form.formState.isSubmitting
                   ? "Saving..."
@@ -621,7 +621,7 @@ export default function PurchasesPage() {
       <div className="mb-6 flex items-center justify-between">
         <div></div>
         <Button
-          className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white"
+          className="flex items-center gap-1 bg-teal-600 hover:bg-teal-700 text-white"
           onClick={() => {
             setShowForm(true);
             setEditRow(null);
@@ -650,7 +650,7 @@ export default function PurchasesPage() {
           <p>{error}</p>
           <Button
             variant="link"
-            className="mt-3 text-blue-500"
+            className="mt-3 text-teal-500"
             onClick={() => window.location.reload()}
           >
             Retry
@@ -750,7 +750,7 @@ export default function PurchasesPage() {
                     <TableCell className="text-center space-x-2">
                       <Button
                         variant="ghost"
-                        className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                        className="text-teal-600 border-teal-200 hover:bg-teal-50"
                         onClick={() => {
                           setEditRow(purchase);
                           setShowForm(true);
@@ -813,7 +813,7 @@ export default function PurchasesPage() {
 
   // Main return with conditional rendering of either form or list
   return (
-    <AppShell pageTitle="Purchases">
+    <AppShell pageTitle={showForm ? "" : "Purchases"}>
       <div className="relative bg-white p-6">
         {showForm ? <PurchaseForm /> : <PurchaseListView />}
       </div>

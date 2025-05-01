@@ -456,7 +456,7 @@ export default function VendorsPage() {
               <Button
                 type="submit"
                 disabled={form.formState.isSubmitting}
-                className="px-6 py-3 text-lg bg-blue-600 hover:bg-blue-700 text-white"
+                className="px-6 py-3 text-lg bg-teal-600 hover:bg-teal-700 text-white"
               >
                 {form.formState.isSubmitting
                   ? "Saving..."
@@ -477,7 +477,7 @@ export default function VendorsPage() {
       <div className="mb-6 flex items-center justify-between">
         <div></div>
         <Button
-          className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white"
+          className="flex items-center gap-1 bg-teal-600 hover:bg-teal-700 text-white"
           onClick={() => setShowForm(true)}
         >
           <Plus className="h-4 w-4" />
@@ -490,7 +490,7 @@ export default function VendorsPage() {
           {error}
           <Button
             variant="link"
-            className="ml-2 text-blue-600"
+            className="ml-2 text-teal-600"
             onClick={() => fetchVendors()}
           >
             Retry
@@ -650,7 +650,7 @@ export default function VendorsPage() {
   );
 
   return (
-    <AppShell pageTitle="Vendors">
+    <AppShell pageTitle={showForm ? "" : "Vendors"}>
       <div className="relative bg-white p-6">
         {showForm ? <VendorForm /> : <VendorListView />}
       </div>

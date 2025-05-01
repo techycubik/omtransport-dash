@@ -19,6 +19,8 @@ import {
   Bell,
   User,
   LogOut,
+  FileText,
+  Activity,
 } from "lucide-react";
 
 interface AppShellProps {
@@ -100,6 +102,8 @@ export default function AppShell({ children, pageTitle }: AppShellProps) {
     { title: "Customers", href: "/customers", icon: <Users size={18} /> },
     { title: "Vendors", href: "/vendors", icon: <Truck size={18} /> },
     { title: "Purchases", href: "/purchases", icon: <ShoppingBag size={18} /> },
+    { title: "Crusher", href: "/crusher", icon: <Activity size={18} /> },
+    { title: "Reports", href: "/reports", icon: <FileText size={18} /> },
   ];
 
   return (
