@@ -25,7 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, ArrowLeft, X } from "lucide-react";
+import { Plus, ArrowLeft, X, Search } from "lucide-react";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
@@ -88,6 +88,8 @@ export default function SalesPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Initialize form
   const form = useForm<FormValues>({
@@ -268,11 +270,30 @@ export default function SalesPage() {
     }
   };
 
+  // Filter sales based on search term
+  const filteredSalesOrders =
+    searchTerm.trim() === ""
+      ? salesOrders
+      : salesOrders.filter((order) => {
+          const searchLower = searchTerm.toLowerCase();
+          const customerName = order.Customer?.name?.toLowerCase() || "";
+          const materialName = order.Material?.name?.toLowerCase() || "";
+          const vehicleNo = order.vehicleNo?.toLowerCase() || "";
+
+          return (
+            customerName.includes(searchLower) ||
+            materialName.includes(searchLower) ||
+            vehicleNo.includes(searchLower)
+          );
+        });
+
   // Full-screen Sales Form
   const SalesForm = () => (
     <div className="w-full">
       <div className="mb-4 flex items-center justify-between">
-        <h1>Add New Sales Order</h1>
+        <h1 className="text-2xl font-bold text-gray-800">
+          Add New Sales Order
+        </h1>
         <Button
           variant="ghost"
           onClick={() => setShowForm(false)}
@@ -512,7 +533,7 @@ export default function SalesPage() {
   const SalesListView = () => (
     <>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Sales Orders</h1>
+        <div></div>
         <Button
           onClick={() => setShowForm(true)}
           className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white"
@@ -520,6 +541,17 @@ export default function SalesPage() {
           <Plus className="h-4 w-4" />
           Add Sale
         </Button>
+      </div>
+
+      {/* Search */}
+      <div className="mb-4 relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Input
+          placeholder="   Search by customer, material or vehicle number..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="bg-gray-50 border-b border-gray-200 text-gray-700 pl-10"
+        />
       </div>
 
       {/* Error display */}
@@ -603,17 +635,19 @@ export default function SalesPage() {
                     <SalesTableSkeleton />
                   </TableCell>
                 </TableRow>
-              ) : salesOrders.length === 0 ? (
+              ) : filteredSalesOrders.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={7}
                     className="text-center py-6 text-gray-600"
                   >
-                    No sales orders found. Click "Add Sale" to create one.
+                    {searchTerm.trim() !== ""
+                      ? "No sales orders match your search."
+                      : 'No sales orders found. Click "Add Sale" to create one.'}
                   </TableCell>
                 </TableRow>
               ) : (
-                salesOrders.map((order) => (
+                filteredSalesOrders.map((order) => (
                   <TableRow className="text-gray-800" key={order.id}>
                     <TableCell className="font-medium text-gray-800">
                       {order.Customer?.name || "Unknown"}
@@ -649,7 +683,7 @@ export default function SalesPage() {
   // Main return with conditional rendering of either form or list
   return (
     <AppShell pageTitle="Sales Orders">
-      <div className="relative">
+      <div className="relative bg-white p-6">
         {showForm ? <SalesForm /> : <SalesListView />}
       </div>
     </AppShell>

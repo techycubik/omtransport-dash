@@ -220,7 +220,9 @@ export default function VendorsPage() {
   const VendorForm = () => (
     <div className="w-full">
       <div className="mb-4 flex items-center justify-between">
-        <h1>{editingVendor ? "Edit Vendor" : "Add New Vendor"}</h1>
+        <h1 className="text-2xl font-bold text-gray-800">
+          {editingVendor ? "Edit Vendor" : "Add New Vendor"}
+        </h1>
         <Button
           variant="ghost"
           onClick={() => {
@@ -228,7 +230,7 @@ export default function VendorsPage() {
             setEditingVendor(null);
             form.reset();
           }}
-          className=" text-gray-800"
+          className="mr-2 text-gray-800"
         >
           <ArrowLeft className="h-4 w-4 mr-1 text-gray-800" />
           <span className="text-gray-800">Back</span>
@@ -473,7 +475,7 @@ export default function VendorsPage() {
   const VendorListView = () => (
     <>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Vendors</h1>
+        <div></div>
         <Button
           className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white"
           onClick={() => setShowForm(true)}
@@ -649,7 +651,7 @@ export default function VendorsPage() {
 
   return (
     <AppShell pageTitle="Vendors">
-      <div className="relative bg-white">
+      <div className="relative bg-white p-6">
         {showForm ? <VendorForm /> : <VendorListView />}
       </div>
     </AppShell>

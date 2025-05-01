@@ -13,7 +13,12 @@ import {
   Users,
   Truck,
   ShoppingBag,
-  Shield,
+  Calendar,
+  ChevronDown,
+  Settings,
+  Bell,
+  User,
+  LogOut,
 } from "lucide-react";
 
 interface AppShellProps {
@@ -24,10 +29,10 @@ interface AppShellProps {
 export default function AppShell({ children, pageTitle }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, logout, isAuthenticated, loading, initialized, isSuperAdmin } =
-    useAuth();
+  const { user, logout, isAuthenticated, loading, initialized } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   // Set isClient to true when component mounts on client
   useEffect(() => {
@@ -49,13 +54,28 @@ export default function AppShell({ children, pageTitle }: AppShellProps) {
     }
   };
 
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest(".user-menu-container")) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   // Display a loading indicator until we can determine authentication
   if (loading || !isClient) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-pulse text-center">
-          <div className="h-8 w-32 bg-blue-200 rounded mx-auto mb-4"></div>
-          <div className="h-4 w-48 bg-blue-100 rounded mx-auto"></div>
+          <div className="h-8 w-32 bg-teal-100 rounded mx-auto mb-4"></div>
+          <div className="h-4 w-48 bg-teal-50 rounded mx-auto"></div>
         </div>
       </div>
     );
@@ -67,7 +87,7 @@ export default function AppShell({ children, pageTitle }: AppShellProps) {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="mb-4 text-gray-600">Redirecting to login page...</div>
-          <div className="w-10 h-10 border-t-4 border-blue-600 border-solid rounded-full animate-spin mx-auto"></div>
+          <div className="w-10 h-10 border-t-4 border-teal-500 border-solid rounded-full animate-spin mx-auto"></div>
         </div>
       </div>
     );
@@ -82,50 +102,93 @@ export default function AppShell({ children, pageTitle }: AppShellProps) {
     { title: "Purchases", href: "/purchases", icon: <ShoppingBag size={18} /> },
   ];
 
-  // Add admin management link for super admin
-  const adminItems = isSuperAdmin
-    ? [
-        {
-          title: "Admin Management",
-          href: "/dashboard/admin",
-          icon: <Shield size={18} />,
-        },
-      ]
-    : [];
-
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Navigation Header */}
-      <header className="sticky top-0 z-30 bg-indigo-900 text-white py-4 shadow-md">
-        <div className="container mx-auto px-6 flex justify-between items-center">
-          <div className="flex items-center">
+    <div className="min-h-screen flex flex-col bg-white">
+      {/* Sequence-Style Header */}
+      <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
+        <div className="px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <button
-              className="md:hidden mr-3 text-white hover:bg-indigo-800 p-2 rounded-md transition-colors"
+              className="md:hidden text-gray-500 hover:bg-gray-100 p-2 rounded-md transition-colors"
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Toggle menu"
             >
               <Menu size={20} />
             </button>
-            <h1 className="text-lg md:text-xl font-bold flex items-center">
-              <Truck className="mr-3 text-yellow-400" size={26} />
-              <span className="text-white font-bold">OM</span>
-              <span className="text-yellow-400 font-bold">Transport</span>
-            </h1>
-          </div>
 
-          {user && (
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-white/80 hidden sm:inline-block">
-                {user.email}
+            <Link href="/dashboard" className="flex items-center">
+              <Truck className="mr-2 text-teal-600" size={24} />
+              <span className="text-lg font-semibold text-gray-900">
+                OM Transport
               </span>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 text-sm bg-indigo-800 hover:bg-indigo-700 text-white rounded-md transition-colors font-medium"
-              >
-                Logout
+            </Link>
+
+            <div className="hidden md:flex items-center gap-2 ml-6">
+              <button className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-md flex items-center gap-1.5">
+                <Calendar size={16} />
+                <span>18 Oct 2024 - 18 Nov 2024</span>
+                <ChevronDown size={14} />
+              </button>
+
+              <div className="h-6 w-px bg-gray-200 mx-1"></div>
+
+              <button className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-md flex items-center gap-1.5">
+                <span>Last 30 days</span>
+                <ChevronDown size={14} />
               </button>
             </div>
-          )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-md">
+              <Bell size={18} />
+            </button>
+
+            <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-md">
+              <Settings size={18} />
+            </button>
+
+            <div className="h-6 w-px bg-gray-200 mx-1"></div>
+
+            <div className="relative user-menu-container">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+              >
+                <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-800 font-medium">
+                  {user?.email?.charAt(0).toUpperCase() || "U"}
+                </div>
+                <ChevronDown size={14} className="text-gray-500" />
+              </button>
+
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-md z-50">
+                  <div className="p-2 border-b border-gray-100">
+                    <div className="text-sm font-medium text-gray-900 truncate">
+                      {user?.email || "User"}
+                    </div>
+                  </div>
+                  <div className="p-1">
+                    <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2">
+                      <User size={16} />
+                      <span>Profile</span>
+                    </button>
+                    <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2">
+                      <Settings size={16} />
+                      <span>Settings</span>
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded flex items-center gap-2"
+                    >
+                      <LogOut size={16} />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
@@ -145,91 +208,78 @@ export default function AppShell({ children, pageTitle }: AppShellProps) {
                 <div className="flex items-center justify-between">
                   <Link
                     href="/dashboard"
-                    className="flex items-center text-navy-500"
+                    className="flex items-center text-gray-900"
                   >
-                    <Truck size={24} className="mr-2 text-yellow-400" />
-                    <span className="text-xl font-bold">OM Transport</span>
+                    <Truck size={24} className="mr-2 text-teal-600" />
+                    <span className="text-xl font-semibold">OM Transport</span>
                   </Link>
                   <button
                     type="button"
-                    className="p-2 -mr-2 text-gray-800"
+                    className="p-2 text-gray-500"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <X size={24} />
+                    <X size={20} />
                   </button>
                 </div>
               </div>
 
               <div className="flex-1 overflow-y-auto pb-4">
                 <nav className="space-y-1 px-2 mt-4">
-                  {navigationItems.map((item) => (
-                    <Link
-                      key={item.title}
-                      href={item.href}
-                      className={`nav-link ${
-                        pathname === item.href ? "active" : ""
-                      }`}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {item.icon}
-                      <span>{item.title}</span>
-                    </Link>
-                  ))}
-
-                  {/* Admin section in mobile menu */}
-                  {adminItems.length > 0 && (
-                    <>
-                      <div className="my-4 border-t border-gray-200 pt-4">
-                        <h3 className="px-3 mb-2 text-xs font-semibold text-gray-500">
-                          ADMINISTRATION
-                        </h3>
-                        {adminItems.map((item) => (
-                          <Link
-                            key={item.title}
-                            href={item.href}
-                            className={`nav-link ${
-                              pathname === item.href ? "active" : ""
-                            }`}
-                            onClick={() => setMobileMenuOpen(false)}
-                          >
-                            {item.icon}
-                            <span>{item.title}</span>
-                          </Link>
-                        ))}
-                      </div>
-                    </>
-                  )}
+                  {navigationItems.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.title}
+                        href={item.href}
+                        className={`flex items-center px-3 py-2.5 rounded-md text-sm ${
+                          isActive
+                            ? "bg-teal-50 text-teal-700 font-medium"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <span
+                          className={`mr-3 ${
+                            isActive ? "text-teal-600" : "text-gray-500"
+                          }`}
+                        >
+                          {item.icon}
+                        </span>
+                        {item.title}
+                      </Link>
+                    );
+                  })}
                 </nav>
               </div>
             </div>
           </div>
         )}
 
-        {/* Sidebar */}
+        {/* Sidebar - Desktop */}
         <aside
           className={`
             ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"} 
-            md:translate-x-0 fixed md:static z-20 w-64 h-full bg-white shadow-md 
-            border-r border-gray-200 transition-transform duration-300 ease-in-out
+            md:translate-x-0 fixed md:sticky top-16 md:top-16 z-20 w-56 h-[calc(100vh-4rem)] bg-white border-r border-gray-200
+            transition-transform duration-300 ease-in-out overflow-y-auto
           `}
         >
-          <nav className="p-5 mt-2 md:mt-0">
-            <ul className="space-y-2">
+          <nav className="p-3 pt-4">
+            <ul className="space-y-1">
               {navigationItems.map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`flex items-center px-4 py-3 rounded-md transition-colors ${
+                      className={`flex items-center px-3 py-2.5 rounded-md text-sm transition-colors ${
                         isActive
-                          ? "bg-indigo-50 text-indigo-800 font-medium"
+                          ? "bg-teal-50 text-teal-700 font-medium"
                           : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >
                       <span
                         className={`mr-3 ${
-                          isActive ? "text-indigo-700" : "text-gray-500"
+                          isActive ? "text-teal-600" : "text-gray-500"
                         }`}
                       >
                         {item.icon}
@@ -244,27 +294,19 @@ export default function AppShell({ children, pageTitle }: AppShellProps) {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6 md:p-8 overflow-x-hidden bg-white">
-          <div className="max-w-full overflow-hidden">
+        <main className="flex-1 p-6 md:p-8 bg-gray-50">
+          <div className="max-w-[1280px] mx-auto">
             {pageTitle && (
-              <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-800">
+              <div className="mb-6">
+                <h1 className="text-xl font-semibold text-gray-800">
                   {pageTitle}
                 </h1>
-                <div className="h-1 w-16 bg-yellow-400 rounded mt-2"></div>
               </div>
             )}
             <div className="animate-fade-in">{children}</div>
           </div>
         </main>
       </div>
-
-      {/* Footer */}
-      <footer className="bg-indigo-900 text-white py-4">
-        <div className="container mx-auto px-6 text-center text-sm">
-          &copy; {new Date().getFullYear()} OM Transport. All rights reserved.
-        </div>
-      </footer>
     </div>
   );
 }

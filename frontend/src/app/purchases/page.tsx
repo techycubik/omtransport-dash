@@ -362,7 +362,7 @@ export default function PurchasesPage() {
   const PurchaseForm = () => (
     <div className="w-full">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-bold text-gray-800">
           {editRow ? "Edit Purchase Order" : "Add New Purchase Order"}
         </h1>
         <Button
@@ -619,7 +619,7 @@ export default function PurchasesPage() {
   const PurchaseListView = () => (
     <>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Purchase Orders</h1>
+        <div></div>
         <Button
           className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white"
           onClick={() => {
@@ -636,10 +636,10 @@ export default function PurchasesPage() {
       <div className="mb-4 relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
-          placeholder="    Search by vendor, material or status..."
+          placeholder="   Search by vendor, material or status..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className=" bg-gray-50 border-b border-gray-200 text-gray-700 "
+          className="bg-gray-50 border-b border-gray-200 text-gray-700 pl-10"
         />
       </div>
 
@@ -814,7 +814,7 @@ export default function PurchasesPage() {
   // Main return with conditional rendering of either form or list
   return (
     <AppShell pageTitle="Purchases">
-      <div className="relative">
+      <div className="relative bg-white p-6">
         {showForm ? <PurchaseForm /> : <PurchaseListView />}
       </div>
     </AppShell>

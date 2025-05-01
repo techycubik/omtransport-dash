@@ -29,10 +29,10 @@ import toast from "react-hot-toast";
 import {
   Plus,
   Search,
-  X,
   Edit,
   ArrowLeft,
   SquareArrowOutUpRight,
+  Trash2,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
@@ -73,6 +73,8 @@ export default function CustomersPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   // Initialize the form
   const form = useForm<CustomerFormValues>({
@@ -209,6 +211,30 @@ export default function CustomersPage() {
     }
   };
 
+  const handleDelete = async (id: number) => {
+    try {
+      const response = await api(`/api/customers/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(`Failed to delete customer: ${errorText}`);
+      }
+
+      // Remove from state
+      setCustomers((prevCustomers) => prevCustomers.filter((c) => c.id !== id));
+      toast.success("Customer deleted successfully");
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete customer"
+      );
+    } finally {
+      setDeleteId(null);
+    }
+  };
+
   // Filter customers based on search term
   const filteredCustomers =
     searchTerm.trim() === ""
@@ -272,7 +298,7 @@ export default function CustomersPage() {
   const CustomerForm = () => (
     <div className="w-full">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-bold text-gray-800">
           {editingCustomer ? "Edit Customer" : "Add New Customer"}
         </h1>
         <Button
@@ -291,7 +317,7 @@ export default function CustomersPage() {
 
       <Card className="p-10 bg-white border border-gray-200">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="name"
@@ -311,31 +337,56 @@ export default function CustomersPage() {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="gstNo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-800 font-semibold">
-                    GST Number
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      className="p-3 bg-white text-gray-800 placeholder:text-gray-400 placeholder:font-thin border-gray-300"
-                      placeholder="Enter GST number"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            <div className="pt-2">
-              <h2 className="font-medium mb-3">Address Details</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="gstNo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-800 font-semibold">
+                      GST Number
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        className="p-3 bg-white text-gray-800 placeholder:text-gray-400 placeholder:font-thin border-gray-300"
+                        placeholder="Enter GST number"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="contact"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-800 font-semibold">
+                      Contact
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        className="p-3 bg-white text-gray-800 placeholder:text-gray-400 placeholder:font-thin border-gray-300"
+                        placeholder="Enter contact information"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="pt-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Address Details
+              </h3>
 
               <div className="mb-4">
-                <label className="font-medium mb-2 block text-gray-800">
+                <label className="block text-gray-800 font-semibold mb-2">
                   Search Address
                 </label>
                 <AddressAutocomplete
@@ -378,11 +429,6 @@ export default function CustomersPage() {
                           className="p-3 bg-white text-gray-800 placeholder:text-gray-400 placeholder:font-thin border-gray-300"
                           placeholder="Enter city"
                           {...field}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            // If the city is changed, we assume the user wants to change it manually
-                            // but we won't auto-update other fields
-                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -452,9 +498,9 @@ export default function CustomersPage() {
                               href={field.value}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="!text-blue-300 hover:!text-blue-600 px-1 flex items-center justify-center "
+                              className="bg-blue-500 hover:bg-blue-600 text-white px-3 flex items-center justify-center rounded-r-md"
                             >
-                              <SquareArrowOutUpRight className="h-5 w-5" />
+                              <SquareArrowOutUpRight className="h-4 w-4" />
                             </a>
                           )}
                         </div>
@@ -486,27 +532,18 @@ export default function CustomersPage() {
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="contact"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-800 font-semibold">
-                    Contact
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      className="p-3 bg-white text-gray-800 placeholder:text-gray-400 placeholder:font-thin border-gray-300"
-                      placeholder="Enter contact information"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-end pt-4 space-x-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingCustomer(null);
+                }}
+                className="text-gray-800"
+              >
+                Cancel
+              </Button>
               <Button
                 type="submit"
                 className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -529,7 +566,7 @@ export default function CustomersPage() {
   const CustomerListView = () => (
     <>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Customers</h1>
+        <div></div>
         <Button
           onClick={() => setShowForm(true)}
           className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white"
@@ -558,10 +595,10 @@ export default function CustomersPage() {
       <div className="mb-4 relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
-          placeholder="    Search by name, contact or address..."
+          placeholder="   Search by name, contact or address..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className=" bg-gray-50 border-b border-gray-200 text-gray-700 "
+          className="bg-gray-50 border-b border-gray-200 text-gray-700 pl-10"
         />
       </div>
 
@@ -586,7 +623,7 @@ export default function CustomersPage() {
                 <TableHead className="text-gray-700 font-semibold">
                   Contact
                 </TableHead>
-                <TableHead className="text-gray-700 font-semibold">
+                <TableHead className="text-gray-700 font-semibold text-center">
                   Actions
                 </TableHead>
               </TableRow>
@@ -624,7 +661,7 @@ export default function CustomersPage() {
                     <TableCell className="text-gray-800">
                       {customer.gstNo || "-"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-gray-700">
                       {customer.street && <div>{customer.street}</div>}
                       {(customer.city ||
                         customer.state ||
@@ -645,7 +682,7 @@ export default function CustomersPage() {
                           href={customer.maps_link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline text-sm block mt-1 flex items-center"
+                          className="text-blue-600 hover:underline text-sm block mt-1 flex items-center"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -671,15 +708,25 @@ export default function CustomersPage() {
                         </a>
                       )}
                     </TableCell>
-                    <TableCell>{customer.contact || "-"}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-gray-800">
+                      {customer.contact || "-"}
+                    </TableCell>
+                    <TableCell className="text-center space-x-2">
                       <Button
                         variant="ghost"
-                        size="sm"
                         className="text-blue-600 border-blue-200 hover:bg-blue-50"
                         onClick={() => handleEdit(customer)}
                       >
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setDeleteId(customer.id);
+                          setShowDeleteConfirm(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -689,13 +736,46 @@ export default function CustomersPage() {
           </Table>
         </div>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-2">Are you sure?</h3>
+            <p className="text-gray-600 mb-4">
+              This will permanently delete the customer. This action cannot be
+              undone.
+            </p>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteId(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (deleteId) handleDelete(deleteId);
+                  setShowDeleteConfirm(false);
+                }}
+                className="bg-red-500 text-white hover:bg-red-600"
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 
   // Use this consistent pattern for conditional rendering
   return (
     <AppShell pageTitle="Customers">
-      <div className="relative">
+      <div className="relative bg-white p-6">
         {showForm ? <CustomerForm /> : <CustomerListView />}
       </div>
     </AppShell>
