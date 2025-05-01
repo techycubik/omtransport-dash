@@ -117,77 +117,37 @@ export default function AppShell({ children, pageTitle }: AppShellProps) {
             </button>
 
             <Link href="/dashboard" className="flex items-center">
-              <Truck className="mr-2 text-teal-600" size={24} />
-              <span className="text-lg font-semibold text-gray-900">
+              <Truck className="mr-2 text-teal-600" size={28} />
+              <span className="text-xl font-semibold text-gray-900">
                 OM Transport
               </span>
             </Link>
-
-            <div className="hidden md:flex items-center gap-2 ml-6">
-              <button className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-md flex items-center gap-1.5">
-                <Calendar size={16} />
-                <span>18 Oct 2024 - 18 Nov 2024</span>
-                <ChevronDown size={14} />
-              </button>
-
-              <div className="h-6 w-px bg-gray-200 mx-1"></div>
-
-              <button className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-md flex items-center gap-1.5">
-                <span>Last 30 days</span>
-                <ChevronDown size={14} />
-              </button>
-            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-md">
-              <Bell size={18} />
+          <div className="relative user-menu-container">
+            <button
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+            >
+              <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-800 font-medium">
+                {user?.email?.charAt(0).toUpperCase() || "U"}
+              </div>
+              <ChevronDown size={14} className="text-gray-500" />
             </button>
 
-            <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-md">
-              <Settings size={18} />
-            </button>
-
-            <div className="h-6 w-px bg-gray-200 mx-1"></div>
-
-            <div className="relative user-menu-container">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
-              >
-                <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-800 font-medium">
-                  {user?.email?.charAt(0).toUpperCase() || "U"}
+            {userMenuOpen && (
+              <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-md z-50">
+                <div className="p-1">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded flex items-center gap-2"
+                  >
+                    <LogOut size={16} />
+                    <span>Logout</span>
+                  </button>
                 </div>
-                <ChevronDown size={14} className="text-gray-500" />
-              </button>
-
-              {userMenuOpen && (
-                <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-md z-50">
-                  <div className="p-2 border-b border-gray-100">
-                    <div className="text-sm font-medium text-gray-900 truncate">
-                      {user?.email || "User"}
-                    </div>
-                  </div>
-                  <div className="p-1">
-                    <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2">
-                      <User size={16} />
-                      <span>Profile</span>
-                    </button>
-                    <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2">
-                      <Settings size={16} />
-                      <span>Settings</span>
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded flex items-center gap-2"
-                    >
-                      <LogOut size={16} />
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
