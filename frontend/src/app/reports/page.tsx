@@ -6,7 +6,7 @@ import TableWrapper from "@/components/TableWrapper";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FileText, Download, ChevronDown, Calendar } from "lucide-react";
+import { FileText, Download, ChevronDown, Calendar, FileText as PDFIcon, FileDown } from "lucide-react";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { saveAs } from 'file-saver';
 
 // Define the types of views
 type ViewType = "purchases" | "sales" | "combined";
@@ -195,22 +196,141 @@ export default function ReportsPage() {
   const handleExportPDF = async () => {
     try {
       toast.success(`Exporting ${view} report to PDF...`);
-      // API call to generate and download PDF would go here
-      // For example:
-      // const response = await api(`/api/reports/export?view=${view}&startDate=${startDate}&endDate=${endDate}`);
-      // if (response.ok) {
-      //   const blob = await response.blob();
-      //   const url = window.URL.createObjectURL(blob);
-      //   const a = document.createElement('a');
-      //   a.href = url;
-      //   a.download = `${view}-report-${startDate}-to-${endDate}.pdf`;
-      //   document.body.appendChild(a);
-      //   a.click();
-      //   window.URL.revokeObjectURL(url);
-      // }
+      
+      // Create a simple HTML table with the data
+      let htmlContent = `
+        <html>
+          <head>
+            <title>${view.charAt(0).toUpperCase() + view.slice(1)} Report</title>
+            <style>
+              body { font-family: Arial, sans-serif; }
+              table { border-collapse: collapse; width: 100%; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              .report-header { margin-bottom: 20px; }
+              h1 { color: #333; }
+            </style>
+          </head>
+          <body>
+            <div class="report-header">
+              <h1>${view.charAt(0).toUpperCase() + view.slice(1)} Delivery Report</h1>
+              <p>Date Range: ${format(new Date(startDate), "PP")} to ${format(new Date(endDate), "PP")}</p>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Type</th>
+                  <th>Entity</th>
+                  <th>Material</th>
+                  <th>Vehicle No</th>
+                  <th>Pickup Date</th>
+                  <th>Drop Date</th>
+                  <th>Pickup Qty</th>
+                  <th>Drop Qty</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+
+      filteredDeliveries.forEach(d => {
+        htmlContent += `
+          <tr>
+            <td>${d.orderId}</td>
+            <td>${d.type}</td>
+            <td>${d.entityName}</td>
+            <td>${d.materialName}</td>
+            <td>${d.vehicleNo}</td>
+            <td>${formatDate(d.pickupDate)}</td>
+            <td>${formatDate(d.dropDate)}</td>
+            <td>${d.pickupQuantity}</td>
+            <td>${d.dropQuantity || '-'}</td>
+            <td>${d.status}</td>
+          </tr>
+        `;
+      });
+
+      htmlContent += `
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+
+      // Convert HTML to Blob
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      
+      // Create a download link
+      saveAs(blob, `${view}-delivery-report-${startDate}-to-${endDate}.html`);
+      
+      toast.success('Export completed successfully!');
     } catch (error) {
       console.error("Error exporting PDF:", error);
       toast.error("Failed to export PDF. Please try again later.");
+    }
+  };
+
+  // Export to CSV function
+  const handleExportCSV = () => {
+    try {
+      toast.success(`Exporting ${view} report to CSV...`);
+      
+      // Create CSV headers
+      const headers = [
+        'ID',
+        'Type',
+        'Entity',
+        'Material',
+        'Vehicle No',
+        'Driver',
+        'Pickup Location',
+        'Drop Location',
+        'Pickup Date',
+        'Drop Date',
+        'Pickup Qty',
+        'Drop Qty',
+        'Difference',
+        'Rate',
+        'Amount',
+        'Status'
+      ].join(',');
+      
+      // Create CSV rows
+      const csvRows = filteredDeliveries.map(d => {
+        return [
+          d.orderId,
+          d.type,
+          d.entityName,
+          d.materialName,
+          d.vehicleNo,
+          d.driver || '',
+          d.pickupLocation || '',
+          d.dropLocation || '',
+          formatDate(d.pickupDate),
+          formatDate(d.dropDate),
+          d.pickupQuantity,
+          d.dropQuantity || '',
+          d.difference || '',
+          d.rate || '',
+          d.amount ? d.amount.toFixed(2) : '',
+          d.status
+        ].join(',');
+      });
+      
+      // Combine headers and rows
+      const csvContent = [headers, ...csvRows].join('\n');
+      
+      // Create a Blob with the CSV content
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      // Create a download link
+      saveAs(blob, `${view}-delivery-report-${startDate}-to-${endDate}.csv`);
+      
+      toast.success('Export completed successfully!');
+    } catch (error) {
+      console.error("Error exporting CSV:", error);
+      toast.error("Failed to export CSV. Please try again later.");
     }
   };
 
@@ -301,14 +421,24 @@ export default function ReportsPage() {
         <Card className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold">Reports Data</h2>
-            <Button
-              variant="outline"
-              className="flex gap-2 items-center"
-              onClick={handleExportPDF}
-            >
-              <Download size={16} />
-              Export PDF
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex gap-2 items-center"
+                onClick={handleExportPDF}
+              >
+                <PDFIcon size={16} />
+                Export PDF
+              </Button>
+              <Button
+                variant="outline"
+                className="flex gap-2 items-center"
+                onClick={handleExportCSV}
+              >
+                <FileDown size={16} />
+                Export CSV
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
