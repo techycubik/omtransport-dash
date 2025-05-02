@@ -1,61 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import AppShell from "@/components/AppShell";
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
-import { Plus, ArrowLeft } from "lucide-react";
-
-// Define the Material type
-interface Material {
-  id: number;
-  name: string;
-  uom: string;
-}
-
-// Define the form schema
-const materialSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  uom: z.string().min(1, "Unit of Measurement is required"),
-});
-
-type MaterialFormValues = z.infer<typeof materialSchema>;
+import MaterialForm, {
+  Material,
+  MaterialFormValues,
+} from "@/components/forms/MaterialForm";
+import MaterialListView from "@/components/views/MaterialListView";
 
 export default function MaterialsPage() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-
-  // Initialize the form
-  const form = useForm<MaterialFormValues>({
-    resolver: zodResolver(materialSchema),
-    defaultValues: {
-      name: "",
-      uom: "",
-    },
-  });
 
   // Load materials on component mount
   useEffect(() => {
@@ -79,7 +37,7 @@ export default function MaterialsPage() {
   };
 
   // Handle form submission
-  const onSubmit = async (values: MaterialFormValues) => {
+  const handleSubmit = useCallback(async (values: MaterialFormValues) => {
     try {
       const response = await api("/api/materials", {
         method: "POST",
@@ -91,172 +49,35 @@ export default function MaterialsPage() {
 
       toast.success("Material created successfully");
       setShowForm(false);
-      form.reset();
       fetchMaterials();
     } catch (error) {
       console.error("Error creating material:", error);
       toast.error("Failed to create material");
     }
-  };
+  }, []);
 
-  // Material Form component
-  const MaterialForm = () => (
-    <div className="w-full">
-      <div className="mb-4 flex flex-col items-start">
-        <Button
-          variant="ghost"
-          onClick={() => setShowForm(false)}
-          className="mb-2 text-gray-800"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1 text-gray-800" />
-          Back
-        </Button>
-        <h1 className="text-2xl font-bold text-gray-800">Add New Material</h1>
-      </div>
+  // Handle cancel
+  const handleCancel = useCallback(() => {
+    setShowForm(false);
+  }, []);
 
-      <Card className="p-10 bg-white border border-gray-200">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-800 font-semibold">
-                    Name *
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter material name"
-                      {...field}
-                      className="bg-white text-gray-800 border-gray-300 placeholder-gray-400"
-                    />
-                  </FormControl>
-                  <FormMessage className="text-red-600" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="uom"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-800 font-semibold">
-                    Unit of Measurement *
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g., kg, ton, liter"
-                      {...field}
-                      className="bg-white text-gray-800 border-gray-300 placeholder-gray-400"
-                    />
-                  </FormControl>
-                  <FormMessage className="text-red-600" />
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-end space-x-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowForm(false)}
-                className="text-gray-800"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="bg-teal-600 hover:bg-teal-700 text-white"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting ? "Saving..." : "Save Material"}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </Card>
-    </div>
-  );
+  // Handle add new
+  const handleAddNew = useCallback(() => {
+    setShowForm(true);
+  }, []);
 
-  // Materials List View
-  const MaterialsListView = () => (
-    <>
-      <div className="mb-6 flex items-center justify-between">
-        <div></div>
-        <Button
-          className="flex items-center gap-1 bg-teal-600 hover:bg-teal-700 text-white"
-          onClick={() => setShowForm(true)}
-        >
-          <Plus className="h-4 w-4" />
-          Add Material
-        </Button>
-      </div>
-
-      <Card className="bg-white border border-gray-200">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-50 border-b border-gray-200">
-                <TableHead className="w-[100px] text-gray-700 font-semibold">
-                  ID
-                </TableHead>
-                <TableHead className="text-gray-700 font-semibold">
-                  Name
-                </TableHead>
-                <TableHead className="text-gray-700 font-semibold">
-                  Unit of Measurement
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={3}
-                    className="text-center py-4 text-gray-600"
-                  >
-                    Loading materials...
-                  </TableCell>
-                </TableRow>
-              ) : materials.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={3}
-                    className="text-center py-4 text-gray-600"
-                  >
-                    No materials found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                materials.map((material) => (
-                  <TableRow
-                    key={material.id}
-                    className="hover:bg-gray-50 border-b border-gray-200"
-                  >
-                    <TableCell className="text-gray-800">
-                      {material.id}
-                    </TableCell>
-                    <TableCell className="text-gray-800">
-                      {material.name}
-                    </TableCell>
-                    <TableCell className="text-gray-800">
-                      {material.uom}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
-    </>
-  );
-
-  // Render the materials page
   return (
-    <AppShell pageTitle={showForm ? "" : "Materials"}>
-      <div className="relative bg-white p-6">
-        {showForm ? <MaterialForm /> : <MaterialsListView />}
+    <AppShell pageTitle="Materials">
+      <div className="container mx-auto py-6 px-4 max-w-6xl">
+        {showForm ? (
+          <MaterialForm onSubmit={handleSubmit} onCancel={handleCancel} />
+        ) : (
+          <MaterialListView
+            materials={materials}
+            loading={loading}
+            onAddNew={handleAddNew}
+          />
+        )}
       </div>
     </AppShell>
   );
