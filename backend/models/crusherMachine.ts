@@ -28,7 +28,8 @@ export const CrusherMachineFactory = (sequelize: Sequelize) => {
     lastMaintenanceDate: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: DataTypes.NOW
+      defaultValue: DataTypes.NOW,
+      field: 'last_maintenance_date'
     }
   }, {
     tableName: 'CrusherMachines',

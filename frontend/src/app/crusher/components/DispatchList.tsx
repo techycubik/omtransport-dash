@@ -208,7 +208,7 @@ export default function DispatchList() {
             values.salesOrderId && values.salesOrderId > 0
               ? values.salesOrderId
               : undefined,
-          deliveryStatus: "PENDING",
+          deliveryStatus: "PENDING" as const,
         };
 
         // Validate that quantity doesn't exceed available

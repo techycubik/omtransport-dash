@@ -26,8 +26,11 @@ import vendorRoutes from './routes/vendorRoutes';
 import salesOrderRoutes from './routes/salesOrderRoutes';
 import purchaseOrderRoutes from './routes/purchaseOrderRoutes';
 import crusherRunRoutes from './routes/crusherRunRoutes';
+import crusherMachineRoutes from './routes/crusherMachineRoutes';
+import dispatchRoutes from './routes/dispatchRoutes';
 import authRoutes from './routes/authRoutes';
 import reportRoutes from './routes/reportRoutes';
+import testRoutes from './routes/testRoutes';
 
 const PORT = process.env.PORT || 4000;
 
@@ -55,9 +58,12 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/sales', salesOrderRoutes);
 app.use('/api/purchases', purchaseOrderRoutes);
-app.use('/api/crusher', crusherRunRoutes);
+app.use('/api/crusher/runs', crusherRunRoutes);
+app.use('/api/crusher/machines', crusherMachineRoutes);
+app.use('/api/crusher/dispatches', dispatchRoutes);
 app.use('/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/test', testRoutes);
 
 // Start server
 async function startServer() {
