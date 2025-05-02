@@ -48,16 +48,26 @@ interface Delivery {
   orderType: string;
   entityId: number;
   entityName: string;
+  entityAddress?: string;
+  entityContact?: string;
+  entityPhone?: string;
   materialId: number;
   materialName: string;
+  materialUom?: string;
+  pickupLocation?: string;
+  dropLocation?: string;
   pickupDate: string;
   dropDate?: string;
   pickupQuantity: number;
   dropQuantity?: number;
   difference?: number;
   vehicleNo: string;
+  driver?: string;
   deliveryDuration?: number;
   status: string;
+  rate?: number;
+  amount?: number;
+  notes?: string;
 }
 
 export default function ReportsPage() {
@@ -66,12 +76,11 @@ export default function ReportsPage() {
   const [filteredDeliveries, setFilteredDeliveries] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState<string>(
-    format(startOfMonth(new Date()), "yyyy-MM-dd")
-  );
-  const [endDate, setEndDate] = useState<string>(
-    format(endOfMonth(new Date()), "yyyy-MM-dd")
-  );
+  
+  // Set initial states with proper date formatting
+  const today = new Date();
+  const [startDate, setStartDate] = useState<string>(format(startOfMonth(today), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState<string>(format(today, "yyyy-MM-dd"));
 
   // Date presets
   const dateRanges = [
@@ -108,8 +117,12 @@ export default function ReportsPage() {
       setLoading(true);
       setError(null);
       try {
+        // Format dates for API query
+        const formattedStartDate = startDate.split('T')[0]; // Ensure we have just the date part
+        const formattedEndDate = endDate.split('T')[0]; // Ensure we have just the date part
+        
         // Query string with date range
-        const query = `startDate=${startDate}&endDate=${endDate}`;
+        const query = `startDate=${formattedStartDate}&endDate=${formattedEndDate}`;
 
         // Fetch delivery data
         const response = await api(`/api/reports/deliveries?${query}`);
@@ -136,7 +149,7 @@ export default function ReportsPage() {
     };
 
     fetchData();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, view]);
 
   // Filter deliveries based on the selected view
   const filterDeliveries = (viewType: ViewType, data = deliveries) => {
@@ -163,8 +176,19 @@ export default function ReportsPage() {
 
   // Handle date range change
   const handleDateRangeChange = (start: string, end: string) => {
-    setStartDate(start);
-    setEndDate(end);
+    // Ensure dates are in YYYY-MM-DD format
+    try {
+      const startFormatted = start.includes('T') ? start.split('T')[0] : start;
+      const endFormatted = end.includes('T') ? end.split('T')[0] : end;
+      
+      setStartDate(startFormatted);
+      setEndDate(endFormatted);
+    } catch (error) {
+      console.error("Error formatting date range:", error);
+      // Fallback to original values if there's an error
+      setStartDate(start);
+      setEndDate(end);
+    }
   };
 
   // Export to PDF function
@@ -300,7 +324,12 @@ export default function ReportsPage() {
                   id="start-date"
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value) {
+                      setStartDate(value);
+                    }
+                  }}
                 />
               </div>
               <div>
@@ -314,7 +343,12 @@ export default function ReportsPage() {
                   id="end-date"
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value) {
+                      setEndDate(value);
+                    }
+                  }}
                 />
               </div>
               <div className="mt-5">
@@ -346,12 +380,18 @@ export default function ReportsPage() {
                       <TableHead>Type</TableHead>
                       <TableHead>ID</TableHead>
                       <TableHead>Entity</TableHead>
+                      <TableHead>Address</TableHead>
                       <TableHead>Material</TableHead>
+                      <TableHead>Vehicle/Driver</TableHead>
+                      <TableHead>Pickup Location</TableHead>
+                      <TableHead>Drop Location</TableHead>
                       <TableHead>Pickup Date</TableHead>
                       <TableHead>Drop Date</TableHead>
                       <TableHead>Pickup Qty</TableHead>
                       <TableHead>Drop Qty</TableHead>
                       <TableHead>Difference</TableHead>
+                      <TableHead>Rate</TableHead>
+                      <TableHead>Amount</TableHead>
                       <TableHead>Duration</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
@@ -373,7 +413,17 @@ export default function ReportsPage() {
                         </TableCell>
                         <TableCell>{delivery.orderId}</TableCell>
                         <TableCell>{delivery.entityName}</TableCell>
-                        <TableCell>{delivery.materialName}</TableCell>
+                        <TableCell>{delivery.entityAddress || "-"}</TableCell>
+                        <TableCell>
+                          {delivery.materialName}
+                          {delivery.materialUom ? ` (${delivery.materialUom})` : ""}
+                        </TableCell>
+                        <TableCell>
+                          {delivery.vehicleNo}
+                          {delivery.driver ? ` / ${delivery.driver}` : ""}
+                        </TableCell>
+                        <TableCell>{delivery.pickupLocation || "-"}</TableCell>
+                        <TableCell>{delivery.dropLocation || "-"}</TableCell>
                         <TableCell>{formatDate(delivery.pickupDate)}</TableCell>
                         <TableCell>{formatDate(delivery.dropDate)}</TableCell>
                         <TableCell>{delivery.pickupQuantity}</TableCell>
@@ -387,6 +437,8 @@ export default function ReportsPage() {
                         >
                           {delivery.difference ?? "-"}
                         </TableCell>
+                        <TableCell>{delivery.rate ?? "-"}</TableCell>
+                        <TableCell>{delivery.amount ? `₹${delivery.amount.toFixed(2)}` : "-"}</TableCell>
                         <TableCell
                           className={
                             delivery.deliveryDuration &&
@@ -420,12 +472,18 @@ export default function ReportsPage() {
                     <TableRow>
                       <TableHead>Purchase ID</TableHead>
                       <TableHead>Vendor</TableHead>
+                      <TableHead>Address</TableHead>
                       <TableHead>Material</TableHead>
+                      <TableHead>Vehicle/Driver</TableHead>
+                      <TableHead>Pickup Location</TableHead>
+                      <TableHead>Drop Location</TableHead>
                       <TableHead>Pickup Date</TableHead>
                       <TableHead>Drop Date</TableHead>
                       <TableHead>Pickup Qty</TableHead>
                       <TableHead>Drop Qty</TableHead>
                       <TableHead>Difference</TableHead>
+                      <TableHead>Rate</TableHead>
+                      <TableHead>Amount</TableHead>
                       <TableHead>Duration</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
@@ -438,7 +496,17 @@ export default function ReportsPage() {
                       >
                         <TableCell>{delivery.orderId}</TableCell>
                         <TableCell>{delivery.entityName}</TableCell>
-                        <TableCell>{delivery.materialName}</TableCell>
+                        <TableCell>{delivery.entityAddress || "-"}</TableCell>
+                        <TableCell>
+                          {delivery.materialName}
+                          {delivery.materialUom ? ` (${delivery.materialUom})` : ""}
+                        </TableCell>
+                        <TableCell>
+                          {delivery.vehicleNo}
+                          {delivery.driver ? ` / ${delivery.driver}` : ""}
+                        </TableCell>
+                        <TableCell>{delivery.pickupLocation || "-"}</TableCell>
+                        <TableCell>{delivery.dropLocation || "-"}</TableCell>
                         <TableCell>{formatDate(delivery.pickupDate)}</TableCell>
                         <TableCell>{formatDate(delivery.dropDate)}</TableCell>
                         <TableCell>{delivery.pickupQuantity}</TableCell>
@@ -452,6 +520,8 @@ export default function ReportsPage() {
                         >
                           {delivery.difference ?? "-"}
                         </TableCell>
+                        <TableCell>{delivery.rate ?? "-"}</TableCell>
+                        <TableCell>{delivery.amount ? `₹${delivery.amount.toFixed(2)}` : "-"}</TableCell>
                         <TableCell
                           className={
                             delivery.deliveryDuration &&
@@ -485,12 +555,18 @@ export default function ReportsPage() {
                     <TableRow>
                       <TableHead>Sales ID</TableHead>
                       <TableHead>Customer</TableHead>
+                      <TableHead>Address</TableHead>
                       <TableHead>Material</TableHead>
+                      <TableHead>Vehicle/Driver</TableHead>
+                      <TableHead>Pickup Location</TableHead>
+                      <TableHead>Drop Location</TableHead>
                       <TableHead>Pickup Date</TableHead>
                       <TableHead>Drop Date</TableHead>
                       <TableHead>Pickup Qty</TableHead>
                       <TableHead>Drop Qty</TableHead>
                       <TableHead>Difference</TableHead>
+                      <TableHead>Rate</TableHead>
+                      <TableHead>Amount</TableHead>
                       <TableHead>Duration</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
@@ -503,7 +579,17 @@ export default function ReportsPage() {
                       >
                         <TableCell>{delivery.orderId}</TableCell>
                         <TableCell>{delivery.entityName}</TableCell>
-                        <TableCell>{delivery.materialName}</TableCell>
+                        <TableCell>{delivery.entityAddress || "-"}</TableCell>
+                        <TableCell>
+                          {delivery.materialName}
+                          {delivery.materialUom ? ` (${delivery.materialUom})` : ""}
+                        </TableCell>
+                        <TableCell>
+                          {delivery.vehicleNo}
+                          {delivery.driver ? ` / ${delivery.driver}` : ""}
+                        </TableCell>
+                        <TableCell>{delivery.pickupLocation || "-"}</TableCell>
+                        <TableCell>{delivery.dropLocation || "-"}</TableCell>
                         <TableCell>{formatDate(delivery.pickupDate)}</TableCell>
                         <TableCell>{formatDate(delivery.dropDate)}</TableCell>
                         <TableCell>{delivery.pickupQuantity}</TableCell>
@@ -517,6 +603,8 @@ export default function ReportsPage() {
                         >
                           {delivery.difference ?? "-"}
                         </TableCell>
+                        <TableCell>{delivery.rate ?? "-"}</TableCell>
+                        <TableCell>{delivery.amount ? `₹${delivery.amount.toFixed(2)}` : "-"}</TableCell>
                         <TableCell
                           className={
                             delivery.deliveryDuration &&
