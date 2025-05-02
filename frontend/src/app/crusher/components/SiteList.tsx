@@ -258,89 +258,90 @@ export default function SiteList() {
       )
     : sites;
 
+  console.log("Search term:", searchTerm);
+  console.log("Filtered sites:", filteredSites);
+
   return (
-    <div className="space-y-6">
-      <Card className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-semibold">Crusher Sites</h2>
-            <div className="relative w-72">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={18}
-              />
-              <Input
-                placeholder="Search sites..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-          <Button 
-            className="flex items-center gap-2" 
-            onClick={() => {
-              resetForm();
-              setIsAddDialogOpen(true);
-            }}
-          >
-            <Plus size={16} />
-            Add New Site
-          </Button>
+    <Card className="p-6">
+      {/* Header section with search and add button */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="relative w-72">
+          <Search
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            size={18}
+          />
+          <Input
+            placeholder="Search sites..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        
-        <TableWrapper
-          loading={loading}
-          isEmpty={filteredSites.length === 0}
-          emptyMessage="No crusher sites found. Add your first site!"
+        {/* Make the Add button more prominent */}
+        <Button 
+          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90" 
+          onClick={() => {
+            resetForm();
+            setIsAddDialogOpen(true);
+          }}
         >
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Owner</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Materials</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+          <Plus size={16} />
+          Add New Site
+        </Button>
+      </div>
+      
+      <TableWrapper
+        loading={loading}
+        isEmpty={filteredSites.length === 0}
+        emptyMessage="No crusher sites found. Add your first site!"
+        searchTerm={searchTerm}
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Owner</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Materials</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredSites.map((site) => (
+              <TableRow key={site.id}>
+                <TableCell className="font-medium">{site.name}</TableCell>
+                <TableCell>{site.owner}</TableCell>
+                <TableCell>{site.location}</TableCell>
+                <TableCell>
+                  {site.Materials.map(m => m.name).join(", ") || "None"}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="flex items-center gap-1"
+                      onClick={() => handleEdit(site)}
+                    >
+                      <Pencil size={14} />
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-1 text-red-500 hover:text-red-600"
+                      onClick={() => handleDelete(site)}
+                    >
+                      <Trash2 size={14} />
+                      Delete
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSites.map((site) => (
-                <TableRow key={site.id}>
-                  <TableCell className="font-medium">{site.name}</TableCell>
-                  <TableCell>{site.owner}</TableCell>
-                  <TableCell>{site.location}</TableCell>
-                  <TableCell>
-                    {site.Materials.map(m => m.name).join(", ") || "None"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="flex items-center gap-1"
-                        onClick={() => handleEdit(site)}
-                      >
-                        <Pencil size={14} />
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex items-center gap-1 text-red-500 hover:text-red-600"
-                        onClick={() => handleDelete(site)}
-                      >
-                        <Trash2 size={14} />
-                        Delete
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableWrapper>
-      </Card>
+            ))}
+          </TableBody>
+        </Table>
+      </TableWrapper>
 
       {/* Add Site Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -536,6 +537,6 @@ export default function SiteList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Card>
   );
 } 
