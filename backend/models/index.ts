@@ -7,6 +7,8 @@ import { PurchaseOrderFactory } from './purchaseorder';
 import { CrusherRunFactory } from './crusherrun';
 import { CrusherMachineFactory } from './crusherMachine';
 import { DispatchFactory } from './dispatch';
+import { CrusherSiteFactory } from './crusherSite';
+import { CrusherSiteMaterialFactory } from './crusherSiteMaterial';
 
 export const initModels = (sequelize: Sequelize) => {
   const Customer = CustomerFactory(sequelize);
@@ -17,6 +19,8 @@ export const initModels = (sequelize: Sequelize) => {
   const CrusherRun = CrusherRunFactory(sequelize);
   const CrusherMachine = CrusherMachineFactory(sequelize);
   const Dispatch = DispatchFactory(sequelize);
+  const CrusherSite = CrusherSiteFactory(sequelize);
+  const CrusherSiteMaterial = CrusherSiteMaterialFactory(sequelize);
 
   // Set up associations
   Customer.hasMany(SalesOrder, { foreignKey: 'customer_id' });
@@ -45,6 +49,19 @@ export const initModels = (sequelize: Sequelize) => {
 
   PurchaseOrder.hasMany(Dispatch, { foreignKey: 'purchase_order_id' });
   Dispatch.belongsTo(PurchaseOrder, { foreignKey: 'purchase_order_id', constraints: false });
+
+  // Crusher Site and Material many-to-many relationship
+  CrusherSite.belongsToMany(Material, { 
+    through: CrusherSiteMaterial,
+    foreignKey: 'crusher_site_id',
+    otherKey: 'material_id' 
+  });
+  
+  Material.belongsToMany(CrusherSite, { 
+    through: CrusherSiteMaterial,
+    foreignKey: 'material_id',
+    otherKey: 'crusher_site_id' 
+  });
 
   return sequelize.models;
 };
