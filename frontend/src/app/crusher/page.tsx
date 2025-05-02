@@ -5,33 +5,39 @@ import AppShell from "@/components/AppShell";
 import TableWrapper from "@/components/TableWrapper";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Activity, Settings, Truck, MapPin } from "lucide-react";
+import { Plus, Activity, Settings, Truck } from "lucide-react";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import ProductionList from "./components/ProductionList";
 import MachineList from "./components/MachineList";
 import DispatchList from "./components/DispatchList";
-import SiteList from "./components/SiteList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export type TabType = "machines" | "dispatches" | "sites";
+export type TabType = "production" | "machines" | "dispatches";
 
 export default function CrusherPage() {
-  const [activeTab, setActiveTab] = useState<TabType>("machines");
+  const [activeTab, setActiveTab] = useState<TabType>("production");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   return (
     <AppShell pageTitle="Crusher Management">
-      <div className="space-y-6">
+      <div className="container mx-auto py-6 px-4 max-w-6xl">
         <Tabs
-          defaultValue="machines"
+          defaultValue="production"
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as TabType)}
           className="w-full"
         >
           <div className="flex justify-between items-center mb-6">
             <TabsList>
+              <TabsTrigger
+                value="production"
+                className="flex items-center gap-2"
+              >
+                <Activity size={16} />
+                Production
+              </TabsTrigger>
               <TabsTrigger value="machines" className="flex items-center gap-2">
                 <Settings size={16} />
                 Machines
@@ -43,15 +49,12 @@ export default function CrusherPage() {
                 <Truck size={16} />
                 Dispatches
               </TabsTrigger>
-              <TabsTrigger
-                value="sites"
-                className="flex items-center gap-2"
-              >
-                <MapPin size={16} />
-                Sites
-              </TabsTrigger>
             </TabsList>
           </div>
+
+          <TabsContent value="production">
+            <ProductionList />
+          </TabsContent>
 
           <TabsContent value="machines">
             <MachineList />
@@ -59,10 +62,6 @@ export default function CrusherPage() {
 
           <TabsContent value="dispatches">
             <DispatchList />
-          </TabsContent>
-
-          <TabsContent value="sites">
-            <SiteList />
           </TabsContent>
         </Tabs>
       </div>
