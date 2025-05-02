@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { saveAs } from 'file-saver';
+import html2pdf from 'html2pdf.js';
 
 // Define the types of views
 type ViewType = "purchases" | "sales" | "combined";
@@ -258,13 +259,27 @@ export default function ReportsPage() {
         </html>
       `;
 
-      // Convert HTML to Blob
-      const blob = new Blob([htmlContent], { type: 'text/html' });
+      // Create a temporary container for the HTML content
+      const element = document.createElement('div');
+      element.innerHTML = htmlContent;
+      document.body.appendChild(element);
+
+      // Options for PDF generation
+      const options = {
+        margin: 10,
+        filename: `${view}-delivery-report-${startDate}-to-${endDate}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+
+      // Generate PDF from HTML
+      html2pdf().from(element).set(options).save().then(() => {
+        // Remove the temporary element after PDF is generated
+        document.body.removeChild(element);
+        toast.success('PDF export completed successfully!');
+      });
       
-      // Create a download link
-      saveAs(blob, `${view}-delivery-report-${startDate}-to-${endDate}.html`);
-      
-      toast.success('Export completed successfully!');
     } catch (error) {
       console.error("Error exporting PDF:", error);
       toast.error("Failed to export PDF. Please try again later.");
