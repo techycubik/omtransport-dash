@@ -13,8 +13,8 @@ export const CrusherSiteFactory = (sequelize: Sequelize) => {
   const CrusherSite = sequelize.define<CrusherSite>('CrusherSite', {
     id: {
       type: DataTypes.INTEGER,
+      autoIncrement: true,
       primaryKey: true,
-      autoIncrement: true
     },
     name: {
       type: DataTypes.STRING,

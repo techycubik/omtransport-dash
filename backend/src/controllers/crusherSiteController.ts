@@ -1,11 +1,10 @@
 import { Request, Response } from 'express';
 import { sequelize } from '../index';
-import { Op, QueryTypes } from 'sequelize';
+import { Op, QueryTypes, Model } from 'sequelize';
 import { CrusherSite } from '../../models/crusherSite';
-import { Model } from 'sequelize';
 
 // Get all crusher sites with their associated materials
-export const getAllCrusherSites = async (req: Request, res: Response) => {
+export const getCrusherSites = async (req: Request, res: Response) => {
   try {
     const { CrusherSite, Material } = sequelize.models;
     
@@ -51,48 +50,34 @@ export const getCrusherSiteById = async (req: Request, res: Response) => {
 // Create a new crusher site
 export const createCrusherSite = async (req: Request, res: Response) => {
   try {
-    const { CrusherSite, Material } = sequelize.models;
+    const { CrusherSite, Material, CrusherSiteMaterial } = sequelize.models;
     const { name, owner, location, materials } = req.body;
-    
-    console.log('Creating crusher site with data:', req.body);
     
     // Validate required fields
     if (!name || !owner || !location) {
       return res.status(400).json({ error: 'Name, owner, and location are required' });
     }
     
-    console.log('Creating new site record');
+    // Create the crusher site
     const newSite = await CrusherSite.create({
       name,
       owner,
       location
-    });
-    console.log('New site created:', newSite.toJSON());
+    }) as Model & { get(key: string): any };
     
-    // Associate materials if provided
+    // Add materials if provided using direct associations
     if (Array.isArray(materials) && materials.length > 0) {
-      console.log('Finding materials with IDs:', materials);
-      
-      // Use direct queries for the many-to-many relationship
+      // Create the junction table entries directly
       for (const materialId of materials) {
-        try {
-          await sequelize.query(`
-            INSERT INTO "CrusherSiteMaterials" (crusher_site_id, material_id, created_at, updated_at)
-            VALUES (?, ?, NOW(), NOW())
-          `, {
-            replacements: [newSite.get('id'), materialId],
-            type: QueryTypes.INSERT
-          });
-          console.log(`Material ${materialId} associated with site ${newSite.get('id')}`);
-        } catch (error) {
-          console.error(`Error associating material ${materialId}:`, error);
-        }
+        await CrusherSiteMaterial.create({
+          crusher_site_id: newSite.get('id') as number,
+          material_id: materialId
+        });
       }
     }
     
-    // Get the newly created site with its associated materials
-    console.log('Retrieving site with materials');
-    const siteWithMaterials = await CrusherSite.findByPk((newSite as any).id, {
+    // Get the newly created site with its materials
+    const siteWithMaterials = await CrusherSite.findByPk(newSite.get('id') as number, {
       include: [{ model: Material }]
     });
     
@@ -106,16 +91,14 @@ export const createCrusherSite = async (req: Request, res: Response) => {
   }
 };
 
-// Update a crusher site
+// Update an existing crusher site
 export const updateCrusherSite = async (req: Request, res: Response) => {
   try {
-    const { CrusherSite, Material } = sequelize.models;
+    const { CrusherSite, Material, CrusherSiteMaterial } = sequelize.models;
     const { id } = req.params;
     const { name, owner, location, materials } = req.body;
     
-    console.log('Updating crusher site', id, 'with data:', req.body);
-    
-    const site = await CrusherSite.findByPk(id);
+    const site = await CrusherSite.findByPk(id) as Model & { update(data: any): Promise<any> };
     
     if (!site) {
       return res.status(404).json({ error: 'Crusher site not found' });
@@ -127,41 +110,24 @@ export const updateCrusherSite = async (req: Request, res: Response) => {
       owner,
       location
     });
-    console.log('Basic site info updated');
     
     // Update materials if provided
     if (Array.isArray(materials)) {
-      console.log('Updating materials:', materials);
-      
-      // First, remove all existing material associations
-      await sequelize.query(`
-        DELETE FROM "CrusherSiteMaterials"
-        WHERE crusher_site_id = ?
-      `, {
-        replacements: [id],
-        type: QueryTypes.DELETE
+      // First, clear existing materials
+      await CrusherSiteMaterial.destroy({
+        where: { crusher_site_id: id }
       });
-      console.log('Removed existing material associations');
       
-      // Then add the new ones
+      // Then add new materials
       for (const materialId of materials) {
-        try {
-          await sequelize.query(`
-            INSERT INTO "CrusherSiteMaterials" (crusher_site_id, material_id, created_at, updated_at)
-            VALUES (?, ?, NOW(), NOW())
-          `, {
-            replacements: [id, materialId],
-            type: QueryTypes.INSERT
-          });
-          console.log(`Material ${materialId} associated with site ${id}`);
-        } catch (error) {
-          console.error(`Error associating material ${materialId}:`, error);
-        }
+        await CrusherSiteMaterial.create({
+          crusher_site_id: id,
+          material_id: materialId
+        });
       }
     }
     
-    // Get the updated site with its associated materials
-    console.log('Retrieving updated site with materials');
+    // Get the updated site with its materials
     const updatedSite = await CrusherSite.findByPk(id, {
       include: [{ model: Material }]
     });
@@ -182,7 +148,7 @@ export const deleteCrusherSite = async (req: Request, res: Response) => {
     const { CrusherSite } = sequelize.models;
     const { id } = req.params;
     
-    const site = await CrusherSite.findByPk(id);
+    const site = await CrusherSite.findByPk(id) as Model & { destroy(): Promise<void> };
     
     if (!site) {
       return res.status(404).json({ error: 'Crusher site not found' });
