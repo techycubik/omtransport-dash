@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Plus, Pencil, Trash2 } from "lucide-react";
+import { MapPin, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import TableWrapper from "@/components/TableWrapper";
@@ -67,6 +67,7 @@ export default function SiteList() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<CrusherSite | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   
   // Form state
   const [formName, setFormName] = useState("");
@@ -247,11 +248,35 @@ export default function SiteList() {
     }
   };
 
+  // Filter sites based on search term
+  const filteredSites = searchTerm
+    ? sites.filter(
+        (site) =>
+          site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          site.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          site.location.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : sites;
+
   return (
     <div className="space-y-6">
       <Card className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold">Crusher Sites</h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-semibold">Crusher Sites</h2>
+            <div className="relative w-72">
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={18}
+              />
+              <Input
+                placeholder="Search sites..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
           <Button 
             className="flex items-center gap-2" 
             onClick={() => {
@@ -266,7 +291,7 @@ export default function SiteList() {
         
         <TableWrapper
           loading={loading}
-          isEmpty={sites.length === 0}
+          isEmpty={filteredSites.length === 0}
           emptyMessage="No crusher sites found. Add your first site!"
         >
           <Table>
@@ -280,7 +305,7 @@ export default function SiteList() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sites.map((site) => (
+              {filteredSites.map((site) => (
                 <TableRow key={site.id}>
                   <TableCell className="font-medium">{site.name}</TableCell>
                   <TableCell>{site.owner}</TableCell>
@@ -292,18 +317,21 @@ export default function SiteList() {
                     <div className="flex justify-end gap-2">
                       <Button 
                         variant="outline" 
-                        size="icon"
+                        size="sm"
+                        className="flex items-center gap-1"
                         onClick={() => handleEdit(site)}
                       >
-                        <Pencil size={16} />
+                        <Pencil size={14} />
+                        Edit
                       </Button>
                       <Button 
                         variant="outline" 
-                        size="icon" 
-                        className="text-red-600"
+                        size="sm" 
+                        className="flex items-center gap-1 text-red-500 hover:text-red-600"
                         onClick={() => handleDelete(site)}
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
+                        Delete
                       </Button>
                     </div>
                   </TableCell>

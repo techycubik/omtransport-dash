@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/TableWrapper";
-import { Plus, ArrowLeft, X, Search, Settings, Power } from "lucide-react";
+import { Plus, ArrowLeft, X, Search, Settings, Power, Edit, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
@@ -247,6 +247,38 @@ export default function MachineList() {
       )
     : machines;
 
+  // Add a delete machine function
+  const handleDeleteMachine = async (machine: CrusherMachine) => {
+    if (!confirm(`Are you sure you want to delete ${machine.name}?`)) {
+      return;
+    }
+    
+    try {
+      const response = await api(`/api/crusher/machines/${machine.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(
+          `Failed to delete machine: ${response.status} ${errorText}`
+        );
+      }
+
+      // Remove the machine from the list
+      setMachines(machines.filter((m) => m.id !== machine.id));
+      toast.success(`Machine ${machine.name} deleted successfully`);
+    } catch (error) {
+      console.error("Error deleting machine:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to delete machine. Please try again later.";
+
+      toast.error(errorMessage);
+    }
+  };
+
   const MachineForm = () => (
     <>
       <div className="flex items-center justify-between mb-6">
@@ -353,8 +385,8 @@ export default function MachineList() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus size={16} className="mr-2" />
+        <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
+          <Plus size={16} />
           Add Machine
         </Button>
       </div>
@@ -385,27 +417,38 @@ export default function MachineList() {
                 <TableCell>
                   <div className="flex space-x-2">
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-gray-500"
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1"
                       onClick={() => {
                         setEditingMachine(machine);
                         setShowForm(true);
                       }}
                     >
-                      <Settings size={16} />
+                      <Edit size={14} />
+                      Edit
                     </Button>
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className={`${
+                      variant="outline"
+                      size="sm"
+                      className={`flex items-center gap-1 ${
                         machine.status === "ACTIVE"
-                          ? "text-green-500"
-                          : "text-gray-500"
+                          ? "text-green-500 hover:text-green-600"
+                          : "text-gray-500 hover:text-gray-600"
                       }`}
                       onClick={() => handleToggleStatus(machine)}
                     >
-                      <Power size={16} />
+                      <Power size={14} />
+                      {machine.status === "ACTIVE" ? "Deactivate" : "Activate"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1 text-red-500 hover:text-red-600"
+                      onClick={() => handleDeleteMachine(machine)}
+                    >
+                      <Trash2 size={14} />
+                      Delete
                     </Button>
                   </div>
                 </TableCell>

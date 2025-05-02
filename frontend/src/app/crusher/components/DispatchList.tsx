@@ -33,6 +33,9 @@ import {
   Search,
   FileText,
   TrendingDown,
+  Edit,
+  Trash2,
+  Truck,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
@@ -108,6 +111,7 @@ export default function DispatchList() {
   const [showForm, setShowForm] = useState(false);
   const [selectedCrusherRun, setSelectedCrusherRun] =
     useState<CrusherRun | null>(null);
+  const [editingDispatch, setEditingDispatch] = useState<Dispatch | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -387,16 +391,10 @@ export default function DispatchList() {
   // Filter dispatches based on search term
   const filteredDispatches = searchTerm
     ? dispatches.filter(
-        (d) =>
-          d.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          d.vehicleNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          d.driver?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          d.CrusherRun?.Material?.name
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          d.SalesOrder?.Customer?.name
-            ?.toLowerCase()
-            .includes(searchTerm.toLowerCase())
+        (dispatch) =>
+          dispatch.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          dispatch.vehicleNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          dispatch.deliveryStatus.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : dispatches;
 
@@ -617,9 +615,9 @@ export default function DispatchList() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus size={16} className="mr-2" />
-          New Dispatch
+        <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
+          <Plus size={16} />
+          Add Dispatch
         </Button>
       </div>
 
@@ -632,68 +630,143 @@ export default function DispatchList() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>ID</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Material</TableHead>
+              <TableHead>Quantity</TableHead>
               <TableHead>Destination</TableHead>
               <TableHead>Vehicle</TableHead>
-              <TableHead>Quantity</TableHead>
-              <TableHead>Pickup Qty</TableHead>
-              <TableHead>Drop Qty</TableHead>
-              <TableHead>Difference</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Duration</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredDispatches.map((dispatch) => {
-              const difference = calculateDifference(
-                dispatch.pickupQuantity,
-                dispatch.dropQuantity
-              );
-              const isLate =
-                dispatch.deliveryDuration !== undefined &&
-                dispatch.deliveryDuration > 2;
-
-              return (
-                <TableRow key={dispatch.id}>
-                  <TableCell>{formatDate(dispatch.dispatchDate)}</TableCell>
-                  <TableCell>
-                    {dispatch.CrusherRun?.Material?.name || "Unknown"}
-                  </TableCell>
-                  <TableCell>{dispatch.destination}</TableCell>
-                  <TableCell>{dispatch.vehicleNo}</TableCell>
-                  <TableCell>
-                    {dispatch.quantity} {dispatch.CrusherRun?.Material?.uom}
-                  </TableCell>
-                  <TableCell>{dispatch.pickupQuantity ?? "-"}</TableCell>
-                  <TableCell>{dispatch.dropQuantity ?? "-"}</TableCell>
-                  <TableCell
-                    className={
-                      difference && difference !== 0
-                        ? "text-red-600 font-medium"
-                        : ""
-                    }
-                  >
-                    {difference !== null ? difference : "-"}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={dispatch.deliveryStatus} />
-                  </TableCell>
-                  <TableCell
-                    className={isLate ? "text-red-600 font-medium" : ""}
-                  >
-                    {dispatch.deliveryDuration !== undefined
-                      ? `${dispatch.deliveryDuration} days`
-                      : "-"}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+            {filteredDispatches.map((dispatch) => (
+              <TableRow key={dispatch.id}>
+                <TableCell>{dispatch.id}</TableCell>
+                <TableCell>{formatDate(dispatch.dispatchDate)}</TableCell>
+                <TableCell>
+                  {dispatch.CrusherRun?.Material
+                    ? `${dispatch.CrusherRun.Material.name} (${dispatch.CrusherRun.Material.uom})`
+                    : "-"}
+                </TableCell>
+                <TableCell>{dispatch.quantity}</TableCell>
+                <TableCell>{dispatch.destination}</TableCell>
+                <TableCell>{dispatch.vehicleNo}</TableCell>
+                <TableCell>
+                  <StatusBadge status={dispatch.deliveryStatus} />
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1"
+                      onClick={() => handleEditDispatch(dispatch)}
+                    >
+                      <Edit size={14} />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1"
+                      onClick={() => handleUpdateStatus(dispatch)}
+                    >
+                      <Truck size={14} />
+                      Update Status
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1 text-red-500 hover:text-red-600"
+                      onClick={() => handleDeleteDispatch(dispatch)}
+                    >
+                      <Trash2 size={14} />
+                      Delete
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </TableWrapper>
     </>
   );
+
+  // Add a delete function
+  const handleDeleteDispatch = async (dispatch: Dispatch) => {
+    if (!confirm(`Are you sure you want to delete this dispatch?`)) {
+      return;
+    }
+    
+    try {
+      const response = await api(`/api/crusher/dispatches/${dispatch.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(
+          `Failed to delete dispatch: ${response.status} ${errorText}`
+        );
+      }
+
+      // Remove the dispatch from the list
+      setDispatches(dispatches.filter((d) => d.id !== dispatch.id));
+      toast.success(`Dispatch deleted successfully`);
+    } catch (error) {
+      console.error("Error deleting dispatch:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to delete dispatch. Please try again later.";
+
+      toast.error(errorMessage);
+    }
+  };
+
+  // Add a function to handle editing
+  const handleEditDispatch = (dispatch: Dispatch) => {
+    // Set form values based on the dispatch
+    form.reset({
+      crusherRunId: dispatch.crusherRunId,
+      salesOrderId: dispatch.salesOrderId || 0,
+      dispatchDate: dispatch.dispatchDate.split('T')[0],
+      quantity: dispatch.quantity,
+      destination: dispatch.destination,
+      vehicleNo: dispatch.vehicleNo,
+      driver: dispatch.driver || '',
+      pickupQuantity: dispatch.pickupQuantity,
+      dropQuantity: dispatch.dropQuantity,
+    });
+    
+    // Set the selected crusher run
+    const run = crusherRuns.find(r => r.id === dispatch.crusherRunId);
+    if (run) {
+      setSelectedCrusherRun(run);
+    }
+    
+    // Show the form
+    setEditingDispatch(dispatch);
+    setShowForm(true);
+  };
+
+  // Add a function to handle status updates
+  const handleUpdateStatus = (dispatch: Dispatch) => {
+    // Simple status update dialog
+    const newStatus = prompt(
+      `Current status: ${dispatch.deliveryStatus}\nEnter new status (PENDING, IN_TRANSIT, DELIVERED):`,
+      dispatch.deliveryStatus
+    );
+    
+    if (newStatus && ["PENDING", "IN_TRANSIT", "DELIVERED"].includes(newStatus)) {
+      updateDeliveryStatus(dispatch, newStatus as "PENDING" | "IN_TRANSIT" | "DELIVERED");
+    } else if (newStatus) {
+      toast.error("Invalid status. Please use PENDING, IN_TRANSIT, or DELIVERED.");
+    }
+  };
 
   return (
     <Card className="p-6">
