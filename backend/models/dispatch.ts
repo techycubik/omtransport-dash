@@ -4,6 +4,7 @@ export interface Dispatch extends Model<InferAttributes<Dispatch>, InferCreation
   id?: number;
   crusherRunId: number;
   salesOrderId?: number;
+  purchaseOrderId?: number;
   dispatchDate: Date;
   quantity: number;
   destination: string;
@@ -13,6 +14,7 @@ export interface Dispatch extends Model<InferAttributes<Dispatch>, InferCreation
   dropQuantity?: number;
   deliveryStatus: 'PENDING' | 'IN_TRANSIT' | 'DELIVERED';
   deliveryDuration?: number;
+  notes?: string;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
 }
@@ -29,6 +31,10 @@ export const DispatchFactory = (sequelize: Sequelize) => {
       allowNull: false
     },
     salesOrderId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    purchaseOrderId: {
       type: DataTypes.INTEGER,
       allowNull: true
     },
@@ -68,6 +74,10 @@ export const DispatchFactory = (sequelize: Sequelize) => {
     },
     deliveryDuration: {
       type: DataTypes.INTEGER, // In days
+      allowNull: true
+    },
+    notes: {
+      type: DataTypes.TEXT,
       allowNull: true
     }
   }, {

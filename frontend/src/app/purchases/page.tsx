@@ -51,7 +51,7 @@ interface PurchaseOrder {
   materialId: number;
   qty: number;
   rate: number;
-  status: "PENDING" | "CONFIRMED" | "DELIVERED" | "CANCELLED";
+  status: "PENDING" | "RECEIVED" | "PARTIAL";
   orderDate: string;
   createdAt?: string;
   updatedAt?: string;
@@ -65,7 +65,7 @@ const formSchema = z.object({
   materialId: z.coerce.number().positive("Please select a material"),
   qty: z.coerce.number().positive("Quantity must be positive"),
   rate: z.coerce.number().positive("Rate must be positive"),
-  status: z.enum(["PENDING", "CONFIRMED", "DELIVERED", "CANCELLED"]),
+  status: z.enum(["PENDING", "RECEIVED", "PARTIAL"]),
   orderDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Please enter a valid date",
   }),
@@ -446,9 +446,8 @@ export default function PurchasesPage() {
                         {...field}
                       >
                         <option value="PENDING">Pending</option>
-                        <option value="CONFIRMED">Confirmed</option>
-                        <option value="DELIVERED">Delivered</option>
-                        <option value="CANCELLED">Cancelled</option>
+                        <option value="RECEIVED">Received</option>
+                        <option value="PARTIAL">Partial</option>
                       </select>
                     </FormControl>
                     <FormMessage />
@@ -730,15 +729,14 @@ export default function PurchasesPage() {
                       ₹{(purchase.qty * purchase.rate).toFixed(2)}
                     </TableCell>
                     <TableCell>
+                      {/* Status display with appropriate color */}
                       <span
-                        className={`px-2 py-1 rounded text-xs ${
-                          purchase.status === "DELIVERED"
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          purchase.status === "RECEIVED"
                             ? "bg-green-100 text-green-800"
-                            : purchase.status === "CONFIRMED"
+                            : purchase.status === "PARTIAL"
                             ? "bg-yellow-100 text-yellow-800"
-                            : purchase.status === "CANCELLED"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-blue-100 text-blue-800"
+                            : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         {purchase.status}

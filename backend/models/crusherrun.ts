@@ -26,11 +26,13 @@ export const CrusherRunFactory = (sequelize: Sequelize) => {
     },
     machineId: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
+      field: 'machine_id'
     },
     inputQty: {
       type: DataTypes.FLOAT,
-      allowNull: false
+      allowNull: false,
+      field: 'input_qty'
     },
     producedQty: {
       type: DataTypes.FLOAT,
@@ -52,7 +54,7 @@ export const CrusherRunFactory = (sequelize: Sequelize) => {
     }
   }, {
     tableName: 'CrusherRuns',
-    underscored: true
+    underscored: false
   });
 
   return CrusherRun;

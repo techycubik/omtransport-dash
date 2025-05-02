@@ -36,6 +36,7 @@
     "@types/node": "^22.15.2",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
+    "@types/sequelize": "^4.28.20",
     "tailwindcss": "^4.1.4"
   }
 }

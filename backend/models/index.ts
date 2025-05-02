@@ -19,29 +19,32 @@ export const initModels = (sequelize: Sequelize) => {
   const Dispatch = DispatchFactory(sequelize);
 
   // Set up associations
-  Customer.hasMany(SalesOrder);
-  SalesOrder.belongsTo(Customer);
+  Customer.hasMany(SalesOrder, { foreignKey: 'customer_id' });
+  SalesOrder.belongsTo(Customer, { foreignKey: 'customer_id' });
 
-  Vendor.hasMany(PurchaseOrder);
-  PurchaseOrder.belongsTo(Vendor);
+  Vendor.hasMany(PurchaseOrder, { foreignKey: 'vendor_id' });
+  PurchaseOrder.belongsTo(Vendor, { foreignKey: 'vendor_id' });
 
-  Material.hasMany(SalesOrder);
-  Material.hasMany(PurchaseOrder);
-  Material.hasMany(CrusherRun);
+  Material.hasMany(SalesOrder, { foreignKey: 'material_id' });
+  Material.hasMany(PurchaseOrder, { foreignKey: 'material_id' });
+  Material.hasMany(CrusherRun, { foreignKey: 'material_id' });
 
-  SalesOrder.belongsTo(Material);
-  PurchaseOrder.belongsTo(Material);
-  CrusherRun.belongsTo(Material);
+  SalesOrder.belongsTo(Material, { foreignKey: 'material_id' });
+  PurchaseOrder.belongsTo(Material, { foreignKey: 'material_id' });
+  CrusherRun.belongsTo(Material, { foreignKey: 'material_id' });
 
   // New associations
-  CrusherMachine.hasMany(CrusherRun);
-  CrusherRun.belongsTo(CrusherMachine);
+  CrusherMachine.hasMany(CrusherRun, { foreignKey: 'machine_id', as: 'CrusherRuns' });
+  CrusherRun.belongsTo(CrusherMachine, { foreignKey: 'machine_id', as: 'Machine' });
 
-  CrusherRun.hasMany(Dispatch);
-  Dispatch.belongsTo(CrusherRun);
+  CrusherRun.hasMany(Dispatch, { foreignKey: 'crusher_run_id' });
+  Dispatch.belongsTo(CrusherRun, { foreignKey: 'crusher_run_id' });
 
-  SalesOrder.hasMany(Dispatch);
-  Dispatch.belongsTo(SalesOrder, { foreignKey: 'salesOrderId', constraints: false });
+  SalesOrder.hasMany(Dispatch, { foreignKey: 'sales_order_id' });
+  Dispatch.belongsTo(SalesOrder, { foreignKey: 'sales_order_id', constraints: false });
+
+  PurchaseOrder.hasMany(Dispatch, { foreignKey: 'purchase_order_id' });
+  Dispatch.belongsTo(PurchaseOrder, { foreignKey: 'purchase_order_id', constraints: false });
 
   return sequelize.models;
 };
