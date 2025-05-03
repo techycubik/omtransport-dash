@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -14,6 +14,7 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Define the Customer type
 export interface Customer {
@@ -120,6 +121,9 @@ interface CustomerFormProps {
 
 export const CustomerForm = React.memo(
   ({ editingCustomer, onSubmit, onCancel }: CustomerFormProps) => {
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     // Initialize the form
     const form = useForm<CustomerFormValues>({
       resolver: zodResolver(customerSchema),
@@ -135,6 +139,38 @@ export const CustomerForm = React.memo(
         maps_link: editingCustomer?.maps_link || "",
       },
     });
+
+    // Handle form submission with error handling
+    const handleFormSubmit = async (values: CustomerFormValues) => {
+      setSubmitError(null);
+      setIsSubmitting(true);
+      
+      try {
+        await onSubmit(values);
+      } catch (error) {
+        console.error("Form submission error:", error);
+        
+        // Display error message
+        if (error instanceof Error) {
+          const errorMessage = error.message;
+          
+          // Handle GST number duplicate error specifically
+          if (errorMessage.includes("GST number already exists")) {
+            setSubmitError("A customer with this GST number already exists.");
+            form.setError("gstNo", { 
+              type: "manual", 
+              message: "This GST number is already in use by another customer" 
+            });
+          } else {
+            setSubmitError(errorMessage);
+          }
+        } else {
+          setSubmitError("An unexpected error occurred. Please try again.");
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
 
     return (
       <div className="w-full">
@@ -152,9 +188,15 @@ export const CustomerForm = React.memo(
           </h1>
         </div>
 
+        {submitError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{submitError}</AlertDescription>
+          </Alert>
+        )}
+
         <Card className="p-10 bg-white border border-gray-200">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="name"
@@ -200,6 +242,16 @@ export const CustomerForm = React.memo(
                               const value = e.target.value.toUpperCase();
                               e.target.value = value;
                               field.onChange(e);
+                              
+                              // Clear any manual error when user types
+                              if (form.formState.errors.gstNo?.type === "manual") {
+                                form.clearErrors("gstNo");
+                              }
+                              
+                              // Clear submit error when user makes changes
+                              if (submitError) {
+                                setSubmitError(null);
+                              }
                             }}
                           />
                           {field.value && (
@@ -409,14 +461,20 @@ export const CustomerForm = React.memo(
                   variant="outline"
                   onClick={onCancel}
                   className="bg-white text-gray-800 border-gray-300"
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   className="bg-blue-600 text-white hover:bg-blue-700"
+                  disabled={isSubmitting}
                 >
-                  {editingCustomer ? "Update Customer" : "Add Customer"}
+                  {isSubmitting 
+                    ? "Saving..." 
+                    : editingCustomer 
+                      ? "Update Customer" 
+                      : "Add Customer"}
                 </Button>
               </div>
             </form>

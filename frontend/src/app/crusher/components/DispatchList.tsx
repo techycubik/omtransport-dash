@@ -33,11 +33,20 @@ import {
   Search,
   FileText,
   TrendingDown,
+  Pencil,
+  Trash2
 } from "lucide-react";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import { format, differenceInDays } from "date-fns";
 import DispatchListView from "@/components/views/DispatchListView";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // Define types
 interface Material {
@@ -107,10 +116,52 @@ export default function DispatchList() {
   const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingDispatch, setEditingDispatch] = useState<Dispatch | null>(null);
   const [selectedCrusherRun, setSelectedCrusherRun] =
     useState<CrusherRun | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [dispatchToDelete, setDispatchToDelete] = useState<Dispatch | null>(null);
+
+  // Format date helper
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "MMM dd, yyyy");
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return dateString;
+    }
+  };
+  
+  // Calculate difference between pickup and drop quantities
+  const calculateDifference = (pickupQty?: number, dropQty?: number) => {
+    if (
+      pickupQty === undefined ||
+      dropQty === undefined ||
+      pickupQty === null ||
+      dropQty === null
+    ) {
+      return null;
+    }
+    return (pickupQty - dropQty).toFixed(2);
+  };
+  
+  // Filter dispatches based on search term
+  const filteredDispatches = searchTerm
+    ? dispatches.filter((dispatch) => {
+        const searchLower = searchTerm.toLowerCase();
+        return (
+          dispatch.destination.toLowerCase().includes(searchLower) ||
+          dispatch.vehicleNo.toLowerCase().includes(searchLower) ||
+          dispatch.CrusherRun?.Material?.name
+            ?.toLowerCase()
+            .includes(searchLower) ||
+          dispatch.deliveryStatus.toLowerCase().includes(searchLower)
+        );
+      })
+    : dispatches;
 
   // Initialize form
   const form = useForm<FormValues>({
@@ -208,11 +259,13 @@ export default function DispatchList() {
             values.salesOrderId && values.salesOrderId > 0
               ? values.salesOrderId
               : undefined,
-          deliveryStatus: "PENDING" as const,
+          deliveryStatus: isEditMode 
+            ? editingDispatch?.deliveryStatus 
+            : "PENDING" as const,
         };
 
         // Validate that quantity doesn't exceed available
-        if (selectedCrusherRun) {
+        if (selectedCrusherRun && !isEditMode) {
           const availableQty =
             selectedCrusherRun.producedQty - selectedCrusherRun.dispatchedQty;
           if (values.quantity > availableQty) {
@@ -223,9 +276,15 @@ export default function DispatchList() {
           }
         }
 
+        // Determine if this is an edit or a new dispatch
+        const url = isEditMode && editingDispatch 
+          ? `/api/crusher/dispatches/${editingDispatch.id}` 
+          : "/api/crusher/dispatches";
+        const method = isEditMode ? "PUT" : "POST";
+
         // Send the data to the server
-        const response = await api("/api/crusher/dispatches", {
-          method: "POST",
+        const response = await api(url, {
+          method: method,
           headers: {
             "Content-Type": "application/json",
           },
@@ -235,275 +294,468 @@ export default function DispatchList() {
         if (!response.ok) {
           const errorText = await response.text().catch(() => "Unknown error");
           throw new Error(
-            `Failed to create dispatch: ${response.status} ${errorText}`
+            `Failed to ${isEditMode ? 'update' : 'create'} dispatch: ${response.status} ${errorText}`
           );
         }
 
-        // Add the new dispatch to the list
-        const newDispatch = await response.json();
-        setDispatches((prev) => [newDispatch, ...prev]);
+        const resultDispatch = await response.json();
 
-        // Update the crusher run's dispatched quantity
-        if (selectedCrusherRun) {
-          const updatedRun = {
-            ...selectedCrusherRun,
-            dispatchedQty: selectedCrusherRun.dispatchedQty + values.quantity,
-          };
-          setCrusherRuns(
-            crusherRuns.map((run) =>
-              run.id === selectedCrusherRun.id ? updatedRun : run
-            )
+        if (isEditMode) {
+          // Update the existing dispatch in the list
+          setDispatches(prev => 
+            prev.map(d => d.id === resultDispatch.id ? resultDispatch : d)
           );
+          
+          toast.success("Dispatch updated successfully");
+        } else {
+          // Add the new dispatch to the list
+          setDispatches((prev) => [resultDispatch, ...prev]);
+          
+          // Update the crusher run's dispatched quantity
+          if (selectedCrusherRun) {
+            const updatedRun = {
+              ...selectedCrusherRun,
+              dispatchedQty: selectedCrusherRun.dispatchedQty + values.quantity,
+            };
+            setCrusherRuns(
+              crusherRuns.map((run) =>
+                run.id === selectedCrusherRun.id ? updatedRun : run
+              )
+            );
+          }
+          
+          toast.success("Dispatch created successfully");
         }
 
         // Reset the form and hide it
         form.reset();
         setSelectedCrusherRun(null);
+        setEditingDispatch(null);
+        setIsEditMode(false);
         setShowForm(false);
-        toast.success("Dispatch created successfully");
       } catch (error) {
-        console.error("Error creating dispatch:", error);
+        console.error(`Error ${isEditMode ? 'updating' : 'creating'} dispatch:`, error);
         const errorMessage =
           error instanceof Error
             ? error.message
-            : "Failed to create dispatch. Please try again later.";
+            : `Failed to ${isEditMode ? 'update' : 'create'} dispatch. Please try again later.`;
 
         toast.error(errorMessage);
       }
     },
-    [selectedCrusherRun, crusherRuns, form]
+    [selectedCrusherRun, crusherRuns, form, isEditMode, editingDispatch]
   );
 
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchTerm(value);
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   }, []);
 
   const handleAddNew = useCallback(() => {
     setShowForm(true);
+    setIsEditMode(false);
+    setEditingDispatch(null);
   }, []);
 
   const handleCancel = useCallback(() => {
     setShowForm(false);
+    setIsEditMode(false);
+    setEditingDispatch(null);
   }, []);
 
-  const DispatchForm = () => (
-    <>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">Create Dispatch</h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowForm(false)}
-          className="text-gray-500"
-        >
-          <X size={18} />
-        </Button>
-      </div>
+  const handleEdit = useCallback((dispatch: Dispatch) => {
+    setEditingDispatch(dispatch);
+    setIsEditMode(true);
+    setShowForm(true);
+    
+    // Find the crusher run associated with this dispatch
+    const run = crusherRuns.find((r) => r.id === dispatch.crusherRunId);
+    if (run) {
+      setSelectedCrusherRun(run);
+    }
+    
+    // Prefill the form with dispatch data
+    form.reset({
+      crusherRunId: dispatch.crusherRunId,
+      salesOrderId: dispatch.salesOrderId || 0,
+      dispatchDate: dispatch.dispatchDate.split('T')[0],
+      quantity: dispatch.quantity,
+      destination: dispatch.destination,
+      vehicleNo: dispatch.vehicleNo,
+      driver: dispatch.driver || "",
+      pickupQuantity: dispatch.pickupQuantity,
+      dropQuantity: dispatch.dropQuantity,
+    });
+  }, [crusherRuns, form]);
 
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(handleFormSubmit)}
-          className="space-y-6"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="crusherRunId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Production Batch</FormLabel>
-                  <FormControl>
-                    <select
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md"
-                      value={field.value}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        const runId = Number(e.target.value);
-                        const run = crusherRuns.find((r) => r.id === runId);
-                        if (run) {
-                          setSelectedCrusherRun(run);
-                          const availableQty =
-                            run.producedQty - run.dispatchedQty;
-                          form.setValue(
-                            "quantity",
-                            availableQty > 0 ? availableQty : 0
-                          );
-                        } else {
-                          setSelectedCrusherRun(null);
-                        }
-                      }}
-                    >
-                      <option value={0}>Select Production Batch</option>
-                      {crusherRuns.map((run) => {
-                        const availableQty =
-                          run.producedQty - run.dispatchedQty;
-                        return (
-                          <option
-                            key={run.id}
-                            value={run.id}
-                            disabled={availableQty <= 0}
-                          >
-                            ID: {run.id} - {run.Material?.name} ({availableQty}{" "}
-                            {run.Material?.uom} available)
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+  const handleDelete = useCallback((dispatch: Dispatch) => {
+    setDispatchToDelete(dispatch);
+    setIsDeleteDialogOpen(true);
+  }, []);
 
-            <FormField
-              control={form.control}
-              name="salesOrderId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Sales Order (Optional)</FormLabel>
-                  <FormControl>
-                    <select
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md"
-                      value={field.value || 0}
-                      onChange={field.onChange}
-                    >
-                      <option value={0}>None (Direct Dispatch)</option>
-                      {salesOrders
-                        .filter(
-                          (order) =>
-                            !selectedCrusherRun ||
-                            order.materialId === selectedCrusherRun.materialId
-                        )
-                        .map((order) => (
-                          <option key={order.id} value={order.id}>
-                            ID: {order.id} - {order.Customer?.name}
-                          </option>
-                        ))}
-                    </select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+  const confirmDelete = useCallback(async () => {
+    if (!dispatchToDelete) return;
+    
+    try {
+      const response = await api(`/api/crusher/dispatches/${dispatchToDelete.id}`, {
+        method: "DELETE",
+      });
 
-            <FormField
-              control={form.control}
-              name="quantity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Dispatch Quantity</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      {...field}
-                      max={
-                        selectedCrusherRun
-                          ? selectedCrusherRun.producedQty -
-                            selectedCrusherRun.dispatchedQty
-                          : 0
-                      }
-                    />
-                  </FormControl>
-                  {selectedCrusherRun && (
-                    <p className="text-xs text-gray-500">
-                      Available:{" "}
-                      {selectedCrusherRun.producedQty -
-                        selectedCrusherRun.dispatchedQty}{" "}
-                      {selectedCrusherRun.Material?.uom}
-                    </p>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      if (!response.ok) {
+        throw new Error(`Failed to delete dispatch: ${response.status}`);
+      }
 
-            <FormField
-              control={form.control}
-              name="dispatchDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Dispatch Date</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      // Update local state by removing the deleted dispatch
+      setDispatches((prev) => prev.filter((d) => d.id !== dispatchToDelete.id));
+      
+      // If there was a crusher run, update its dispatched quantity
+      if (dispatchToDelete.crusherRunId) {
+        setCrusherRuns(prevRuns => 
+          prevRuns.map(run => {
+            if (run.id === dispatchToDelete.crusherRunId) {
+              return {
+                ...run,
+                dispatchedQty: Math.max(0, run.dispatchedQty - dispatchToDelete.quantity)
+              };
+            }
+            return run;
+          })
+        );
+      }
 
-            <FormField
-              control={form.control}
-              name="destination"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Destination</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      toast.success("Dispatch deleted successfully");
+      setIsDeleteDialogOpen(false);
+      setDispatchToDelete(null);
+    } catch (error) {
+      console.error("Error deleting dispatch:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to delete dispatch. Please try again later.";
 
-            <FormField
-              control={form.control}
-              name="vehicleNo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Vehicle Number</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="driver"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Driver Name (Optional)</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="flex justify-end space-x-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowForm(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">Create Dispatch</Button>
-          </div>
-        </form>
-      </Form>
-    </>
-  );
+      toast.error(errorMessage);
+    }
+  }, [dispatchToDelete]);
 
   return (
     <Card className="p-6">
       {showForm ? (
-        <DispatchForm />
+        <div className="space-y-6">
+          <div className="flex items-center mb-6">
+            <Button 
+              variant="ghost" 
+              className="mr-2 p-0 hover:bg-transparent"
+              onClick={() => setShowForm(false)}
+            >
+              <ArrowLeft className="h-5 w-5 mr-1" />
+              Back
+            </Button>
+            <h2 className="text-2xl font-bold">
+              {isEditMode ? "Edit Dispatch" : "Add New Dispatch"}
+            </h2>
+          </div>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="crusherRunId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Production Batch</FormLabel>
+                      <FormControl>
+                        <select
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md"
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            const runId = Number(e.target.value);
+                            const run = crusherRuns.find((r) => r.id === runId);
+                            if (run) {
+                              setSelectedCrusherRun(run);
+                              const availableQty = run.producedQty - run.dispatchedQty;
+                              form.setValue("quantity", availableQty > 0 ? availableQty : 0);
+                            } else {
+                              setSelectedCrusherRun(null);
+                            }
+                          }}
+                        >
+                          <option value={0}>Select Production Batch</option>
+                          {crusherRuns.map((run) => {
+                            const availableQty = run.producedQty - run.dispatchedQty;
+                            return (
+                              <option key={run.id} value={run.id} disabled={availableQty <= 0}>
+                                ID: {run.id} - {run.Material?.name} ({availableQty} {" "}
+                                {run.Material?.uom} available)
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="salesOrderId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sales Order (Optional)</FormLabel>
+                      <FormControl>
+                        <select
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md"
+                          value={field.value || 0}
+                          onChange={field.onChange}
+                        >
+                          <option value={0}>None (Direct Dispatch)</option>
+                          {salesOrders
+                            .filter((order) => !selectedCrusherRun || order.materialId === selectedCrusherRun.materialId)
+                            .map((order) => (
+                              <option key={order.id} value={order.id}>
+                                ID: {order.id} - {order.Customer?.name}
+                              </option>
+                            ))}
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dispatch Quantity</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          {...field}
+                          max={selectedCrusherRun ? selectedCrusherRun.producedQty - selectedCrusherRun.dispatchedQty : 0}
+                        />
+                      </FormControl>
+                      {selectedCrusherRun && (
+                        <p className="text-xs text-gray-500">
+                          Available: {selectedCrusherRun.producedQty - selectedCrusherRun.dispatchedQty}{" "}
+                          {selectedCrusherRun.Material?.uom}
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="dispatchDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dispatch Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="destination"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Destination</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="vehicleNo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vehicle Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="driver"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Driver Name (Optional)</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="flex justify-end space-x-4 mt-8">
+                <button
+                  type="button"
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  onClick={() => setShowForm(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-primary border border-transparent rounded-md text-sm font-medium text-black hover:bg-primary/90"
+                >
+                  {isEditMode ? "Update" : "Save"}
+                </button>
+              </div>
+            </form>
+          </Form>
+        </div>
       ) : (
-        <DispatchListView
-          dispatches={dispatches}
-          searchTerm={searchTerm}
-          onSearchChange={handleSearchChange}
-          onAddNew={handleAddNew}
-          loading={loading}
-        />
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <div className="relative w-72">
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={18}
+              />
+              <Input
+                placeholder="Search dispatches..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={handleSearchChange}
+              />
+            </div>
+            <button 
+              className="flex items-center gap-2 px-4 py-2 bg-primary border border-transparent rounded-md text-sm font-medium text-black hover:bg-primary/90" 
+              onClick={() => setShowForm(true)}
+            >
+              <Plus size={16} />
+              Add New Dispatch
+            </button>
+          </div>
+          
+          <TableWrapper
+            loading={loading}
+            isEmpty={filteredDispatches.length === 0}
+            emptyMessage="No dispatches found."
+            searchTerm={searchTerm}
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Material</TableHead>
+                  <TableHead>Destination</TableHead>
+                  <TableHead>Vehicle</TableHead>
+                  <TableHead>Quantity</TableHead>
+                  <TableHead>Pickup Qty</TableHead>
+                  <TableHead>Drop Qty</TableHead>
+                  <TableHead>Difference</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredDispatches.map((dispatch) => {
+                  const difference = calculateDifference(
+                    dispatch.pickupQuantity,
+                    dispatch.dropQuantity
+                  );
+                  
+                  return (
+                    <TableRow key={dispatch.id}>
+                      <TableCell>{formatDate(dispatch.dispatchDate)}</TableCell>
+                      <TableCell>
+                        {dispatch.CrusherRun?.Material?.name || "Unknown"}
+                      </TableCell>
+                      <TableCell>{dispatch.destination}</TableCell>
+                      <TableCell>{dispatch.vehicleNo}</TableCell>
+                      <TableCell>
+                        {dispatch.quantity}{" "}
+                        {dispatch.CrusherRun?.Material?.uom || ""}
+                      </TableCell>
+                      <TableCell>{dispatch.pickupQuantity ?? "-"}</TableCell>
+                      <TableCell>{dispatch.dropQuantity ?? "-"}</TableCell>
+                      <TableCell
+                        className={
+                          difference && parseFloat(difference) !== 0
+                            ? "text-red-600 font-medium"
+                            : ""
+                        }
+                      >
+                        {difference !== null ? difference : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={dispatch.deliveryStatus} />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            className="px-3 py-1 border border-gray-300 rounded-md text-xs font-medium flex items-center gap-1 text-gray-700 hover:bg-gray-50"
+                            onClick={() => handleEdit(dispatch)}
+                          >
+                            <Pencil size={14} />
+                            Edit
+                          </button>
+                          <button
+                            className="px-3 py-1 border border-gray-300 rounded-md text-xs font-medium flex items-center gap-1 text-red-500 hover:bg-gray-50"
+                            onClick={() => handleDelete(dispatch)}
+                          >
+                            <Trash2 size={14} />
+                            Delete
+                          </button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableWrapper>
+        </div>
       )}
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Are you sure?</DialogTitle>
+          </DialogHeader>
+          <p>
+            This will permanently delete the dispatch order.
+            This action cannot be undone.
+          </p>
+          <div className="flex justify-end space-x-4 mt-6">
+            <button 
+              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </button>
+            <button 
+              className="px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-red-700"
+              onClick={confirmDelete}
+            >
+              Delete
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

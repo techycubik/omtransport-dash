@@ -21,6 +21,7 @@ import {
   LogOut,
   FileText,
   Activity,
+  History,
 } from "lucide-react";
 
 interface AppShellProps {
@@ -31,7 +32,7 @@ interface AppShellProps {
 export default function AppShell({ children, pageTitle }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, logout, isAuthenticated, loading, initialized } = useAuth();
+  const { user, logout, isAuthenticated, loading, initialized, isAdmin, isSuperAdmin } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -97,19 +98,21 @@ export default function AppShell({ children, pageTitle }: AppShellProps) {
 
   const navigationItems = [
     { title: "Dashboard", href: "/dashboard", icon: <BarChart size={18} /> },
-    { title: "Sales Orders", href: "/sales", icon: <Package size={18} /> },
+    { title: "Reports", href: "/reports", icon: <FileText size={18} /> },
     { title: "Materials", href: "/materials", icon: <Hammer size={18} /> },
     { title: "Customers", href: "/customers", icon: <Users size={18} /> },
     { title: "Vendors", href: "/vendors", icon: <Truck size={18} /> },
-    { title: "Purchases", href: "/purchases", icon: <ShoppingBag size={18} /> },
     { title: "Crusher", href: "/crusher", icon: <Activity size={18} /> },
-    { title: "Reports", href: "/reports", icon: <FileText size={18} /> },
+    { title: "Sales Orders", href: "/sales", icon: <Package size={18} /> },
+    { title: "Purchases", href: "/purchases", icon: <ShoppingBag size={18} /> },
+    ...(isAdmin ? [{ title: "Users", href: "/dashboard/users", icon: <User size={18} /> }] : []),
+    ...(isAdmin ? [{ title: "Audit Logs", href: "/dashboard/audit-logs", icon: <History size={18} /> }] : []),
   ];
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      {/* Sequence-Style Header */}
-      <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
+      {/* Fixed Header */}
+      <header className="fixed top-0 left-0 right-0 z-30 bg-white border-b border-gray-200">
         <div className="px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
@@ -156,7 +159,7 @@ export default function AppShell({ children, pageTitle }: AppShellProps) {
         </div>
       </header>
 
-      <div className="flex-1 flex relative">
+      <div className="flex-1 flex flex-row overflow-hidden pt-16">
         {/* Sidebar - Mobile */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-40 flex md:hidden">
@@ -221,11 +224,7 @@ export default function AppShell({ children, pageTitle }: AppShellProps) {
 
         {/* Sidebar - Desktop */}
         <aside
-          className={`
-            ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"} 
-            md:translate-x-0 fixed md:sticky top-16 md:top-16 z-20 w-56 h-[calc(100vh-4rem)] bg-white border-r border-gray-200
-            transition-transform duration-300 ease-in-out overflow-y-auto
-          `}
+          className="hidden md:block w-64 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto fixed top-16 left-0 bottom-0"
         >
           <nav className="p-3 pt-4">
             <ul className="space-y-1">
@@ -257,8 +256,8 @@ export default function AppShell({ children, pageTitle }: AppShellProps) {
           </nav>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 p-6 md:p-8 bg-gray-50">
+        {/* Main Content - Add left margin to accommodate fixed sidebar */}
+        <main className="flex-1 overflow-auto p-6 md:p-8 bg-gray-50 md:ml-64">
           <div className="max-w-[1280px] mx-auto">
             {pageTitle && (
               <div className="mb-6">

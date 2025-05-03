@@ -3,6 +3,7 @@ import { CustomerFactory } from './customer';
 import { VendorFactory } from './vendor';
 import { MaterialFactory } from './material';
 import { SalesOrderFactory } from './salesorder';
+import { SalesOrderItemFactory } from './salesOrderItem';
 import { PurchaseOrderFactory } from './purchaseorder';
 import { CrusherRunFactory } from './crusherrun';
 import { CrusherMachineFactory } from './crusherMachine';
@@ -15,6 +16,7 @@ export const initModels = (sequelize: Sequelize) => {
   const Vendor = VendorFactory(sequelize);
   const Material = MaterialFactory(sequelize);
   const SalesOrder = SalesOrderFactory(sequelize);
+  const SalesOrderItem = SalesOrderItemFactory(sequelize);
   const PurchaseOrder = PurchaseOrderFactory(sequelize);
   const CrusherRun = CrusherRunFactory(sequelize);
   const CrusherMachine = CrusherMachineFactory(sequelize);
@@ -26,14 +28,22 @@ export const initModels = (sequelize: Sequelize) => {
   Customer.hasMany(SalesOrder, { foreignKey: 'customer_id' });
   SalesOrder.belongsTo(Customer, { foreignKey: 'customer_id' });
 
+  // SalesOrderItem associations
+  SalesOrder.hasMany(SalesOrderItem, { foreignKey: 'sales_order_id' });
+  SalesOrderItem.belongsTo(SalesOrder, { foreignKey: 'sales_order_id' });
+  
+  Material.hasMany(SalesOrderItem, { foreignKey: 'material_id' });
+  SalesOrderItem.belongsTo(Material, { foreignKey: 'material_id' });
+  
+  CrusherSite.hasMany(SalesOrderItem, { foreignKey: 'crusher_site_id' });
+  SalesOrderItem.belongsTo(CrusherSite, { foreignKey: 'crusher_site_id' });
+
   Vendor.hasMany(PurchaseOrder, { foreignKey: 'vendor_id' });
   PurchaseOrder.belongsTo(Vendor, { foreignKey: 'vendor_id' });
 
-  Material.hasMany(SalesOrder, { foreignKey: 'material_id' });
   Material.hasMany(PurchaseOrder, { foreignKey: 'material_id' });
   Material.hasMany(CrusherRun, { foreignKey: 'material_id' });
 
-  SalesOrder.belongsTo(Material, { foreignKey: 'material_id' });
   PurchaseOrder.belongsTo(Material, { foreignKey: 'material_id' });
   CrusherRun.belongsTo(Material, { foreignKey: 'material_id' });
 

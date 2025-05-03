@@ -83,20 +83,44 @@ export default function VendorsPage() {
         console.log("Response:", response);
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({
-            error: editingVendor
-              ? "Failed to update vendor"
-              : "Failed to create vendor",
-          }));
-          throw new Error(
-            errorData.error ||
-              (editingVendor
-                ? "Failed to update vendor"
-                : "Failed to create vendor")
-          );
+          const errorText = await response.text();
+          console.log("API response error text:", errorText);
+
+          try {
+            // Try to parse as JSON
+            const errorData = JSON.parse(errorText);
+            
+            // Special handling for GST number already exists error
+            if (errorData.error && errorData.error.includes("GST number already exists")) {
+              const error = new Error("A vendor with this GST number already exists");
+              error.name = "GSTDuplicateError";
+              throw error;
+            }
+            
+            // Handle other errors
+            throw new Error(
+              errorData.error ||
+                (editingVendor
+                  ? "Failed to update vendor"
+                  : "Failed to create vendor")
+            );
+          } catch (parseError) {
+            if (parseError instanceof Error && parseError.name === "GSTDuplicateError") {
+              throw parseError;
+            }
+            
+            // If it's not valid JSON, display the raw text as a toast error
+            toast.error(
+              errorText ||
+                (editingVendor
+                  ? "Failed to update vendor"
+                  : "Failed to create vendor")
+            );
+            return; // Return early without throwing an error
+          }
         }
 
-        // Get the vendor data from the response
+        // Handle successful response
         const vendorData = await response.json();
         console.log("Vendor data:", vendorData);
 
@@ -117,12 +141,18 @@ export default function VendorsPage() {
         fetchVendors(); // Refresh the table
       } catch (error) {
         console.error("Error saving vendor:", error);
+        
+        // If it's a GST number duplicate error, we'll handle it in the form component
+        if (error instanceof Error && error.message.includes("GST number already exists")) {
+          throw error; // Rethrow to be caught by the form
+        }
+        
         toast.error(
           error instanceof Error ? error.message : "Failed to save vendor"
         );
       }
     },
-    [editingVendor]
+    [editingVendor, fetchVendors]
   );
 
   // Handle edit - using useCallback to prevent recreation on each render
@@ -147,10 +177,28 @@ export default function VendorsPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete vendor.");
+        // Try to parse error response
+        const errorText = await response.text();
+        let errorMessage = "Failed to delete vendor.";
+        
+        try {
+          // Try to parse as JSON
+          if (errorText) {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.error || errorMessage;
+          }
+        } catch (parseError) {
+          // If parsing fails, use the original error message
+          console.error("Error parsing response:", parseError);
+        }
+        
+        throw new Error(errorMessage);
       }
 
-      toast.success("Vendor deleted successfully");
+      // Parse the successful response 
+      const result = await response.json();
+      
+      toast.success(result.message || "Vendor deleted successfully");
 
       // Remove the vendor from the list
       setVendors((prevVendors) => prevVendors.filter((v) => v.id !== deleteId));

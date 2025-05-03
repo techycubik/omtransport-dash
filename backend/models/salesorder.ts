@@ -3,10 +3,9 @@ import { Model, DataTypes, Sequelize, InferAttributes, InferCreationAttributes }
 export interface SalesOrder extends Model<InferAttributes<SalesOrder>, InferCreationAttributes<SalesOrder>> {
   id?: number;
   customerId: number;
-  materialId: number;
-  qty: number;
-  rate: number;
   vehicleNo?: string;
+  challanNo?: string;
+  address?: string;
   orderDate: Date;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
@@ -23,19 +22,15 @@ export const SalesOrderFactory = (sequelize: Sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    materialId: {
-      type: DataTypes.INTEGER,
-      allowNull: false
-    },
-    qty: {
-      type: DataTypes.FLOAT,
-      allowNull: false
-    },
-    rate: {
-      type: DataTypes.FLOAT,
-      allowNull: false
-    },
     vehicleNo: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    challanNo: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    address: {
       type: DataTypes.STRING,
       allowNull: true
     },

@@ -7,8 +7,7 @@ import { z } from 'zod';
 const { Material } = sequelize.models;
 
 const materialSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  uom: z.string().min(1, 'UOM is required')
+  name: z.string().min(1, 'Name is required')
 });
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
@@ -19,24 +18,37 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const validationResult = materialSchema.safeParse(req.body);
   if (!validationResult.success) {
-    res.status(400).json({ error: 'Validation failed' });
+    res.status(400).json({ error: 'Validation failed', details: validationResult.error.format() });
     return;
   }
 
-  const { name, uom } = validationResult.data;
-  const material = await Material.create({ name, uom });
-  res.status(201).json(material);
+  const { name } = validationResult.data;
+  
+  // Check for existing material with same name
+  const existingMaterial = await Material.findOne({ where: { name } });
+  if (existingMaterial) {
+    res.status(400).json({ error: 'Material name already exists' });
+    return;
+  }
+  
+  try {
+    const material = await Material.create({ name });
+    res.status(201).json(material);
+  } catch (error) {
+    console.error('Error creating material:', error);
+    res.status(500).json({ error: 'Failed to create material' });
+  }
 });
 
 export const update = asyncHandler(async (req: Request, res: Response) => {
   const validationResult = materialSchema.partial().safeParse(req.body);
   if (!validationResult.success) {
-    res.status(400).json({ error: 'Validation failed' });
+    res.status(400).json({ error: 'Validation failed', details: validationResult.error.format() });
     return;
   }
 
   const { id } = req.params;
-  const { name, uom } = validationResult.data;
+  const { name } = validationResult.data;
   
   const material = await Material.findByPk(id) as unknown as MaterialType;
   if (!material) {
@@ -44,9 +56,29 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
     return;
   }
 
-  if (name) material.name = name;
-  if (uom) material.uom = uom;
+  if (name && name !== material.name) {
+    // Check for existing material with same name
+    const existingMaterial = await Material.findOne({ where: { name } });
+    if (existingMaterial) {
+      res.status(400).json({ error: 'Material name already exists' });
+      return;
+    }
+    material.name = name;
+  }
   
   await material.save();
   res.json(material);
+});
+
+export const remove = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  
+  const material = await Material.findByPk(id);
+  if (!material) {
+    res.status(404).json({ error: 'Material not found' });
+    return;
+  }
+  
+  await material.destroy();
+  res.status(204).send();
 }); 

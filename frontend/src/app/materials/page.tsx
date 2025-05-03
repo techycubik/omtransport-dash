@@ -39,13 +39,24 @@ export default function MaterialsPage() {
   // Handle form submission
   const handleSubmit = useCallback(async (values: MaterialFormValues) => {
     try {
+      console.log("Submitting material:", values);
       const response = await api("/api/materials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
 
-      if (!response.ok) throw new Error("Failed to create material");
+      const responseData = await response.json().catch(() => null);
+      console.log("Create material response:", responseData);
+
+      if (!response.ok) {
+        if (responseData?.error && responseData.error.includes("already exists")) {
+          toast.error("A material with this name already exists");
+        } else {
+          toast.error("Failed to create material");
+        }
+        return;
+      }
 
       toast.success("Material created successfully");
       setShowForm(false);
@@ -53,6 +64,32 @@ export default function MaterialsPage() {
     } catch (error) {
       console.error("Error creating material:", error);
       toast.error("Failed to create material");
+    }
+  }, []);
+
+  // Handle delete
+  const handleDelete = useCallback(async (id: number) => {
+    if (!confirm("Are you sure you want to delete this material?")) {
+      return;
+    }
+    
+    try {
+      console.log(`Deleting material with ID: ${id}`);
+      const response = await api(`/api/materials/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        console.error("Delete error response:", errorText);
+        throw new Error(`Failed to delete material: ${errorText}`);
+      }
+
+      toast.success("Material deleted successfully");
+      fetchMaterials();
+    } catch (error) {
+      console.error("Error deleting material:", error);
+      toast.error(`Failed to delete material: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }, []);
 
@@ -76,6 +113,7 @@ export default function MaterialsPage() {
             materials={materials}
             loading={loading}
             onAddNew={handleAddNew}
+            onDelete={handleDelete}
           />
         )}
       </div>

@@ -9,9 +9,12 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
     // Get user ID from session or token (implementation depends on your auth system)
     // This is just a placeholder - replace with your actual auth mechanism
     const userIdStr = req.headers['user-id'] as string | undefined;
+    console.log('Auth middleware - user-id header:', userIdStr);
+    
     const userId = userIdStr ? parseInt(userIdStr) : undefined;
     
     if (!userId || isNaN(userId)) {
+      console.log('Authentication failed: Missing or invalid user ID');
       return res.status(401).json({ error: 'Authentication required' });
     }
     
@@ -22,6 +25,7 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
     });
     
     if (!user) {
+      console.log(`Authentication failed: User ${userId} not found or inactive`);
       return res.status(401).json({ error: 'User not found or inactive' });
     }
     
@@ -32,8 +36,10 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
       role: user.role as UserRole
     };
     
+    console.log(`User authenticated: ${user.email} (${user.role})`);
     next();
   } catch (error) {
+    console.error('Auth middleware error:', error);
     next(error);
   }
 };

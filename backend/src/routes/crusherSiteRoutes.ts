@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import {
-  getAllCrusherSites,
+  getCrusherSites,
   getCrusherSiteById,
   createCrusherSite,
   updateCrusherSite,
@@ -9,19 +9,11 @@ import {
 
 const router = Router();
 
-// Get all crusher sites
-router.get('/', getAllCrusherSites);
-
-// Get a single crusher site by ID
+// Crusher Sites routes
+router.get('/', getCrusherSites);
 router.get('/:id', getCrusherSiteById);
-
-// Create a new crusher site
 router.post('/', createCrusherSite);
-
-// Update a crusher site
 router.put('/:id', updateCrusherSite);
-
-// Delete a crusher site
 router.delete('/:id', deleteCrusherSite);
 
 export default router; 

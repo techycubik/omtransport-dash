@@ -19,13 +19,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 export interface Material {
   id: number;
   name: string;
-  uom: string;
 }
 
 // Define the form schema
 export const materialSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  uom: z.string().min(1, "Unit of Measurement is required"),
+  name: z.string().min(1, "Name is required").trim(),
 });
 
 export type MaterialFormValues = z.infer<typeof materialSchema>;
@@ -42,9 +40,18 @@ export const MaterialForm = React.memo(
       resolver: zodResolver(materialSchema),
       defaultValues: {
         name: "",
-        uom: "",
       },
     });
+
+    const handleFormSubmit = async (values: MaterialFormValues) => {
+      try {
+        await onSubmit(values);
+      } catch (error) {
+        console.error("Form submission error:", error);
+        // Reset the form's submitting state in case of error
+        form.reset({ ...values }, { keepValues: true });
+      }
+    };
 
     return (
       <div className="w-full">
@@ -62,7 +69,7 @@ export const MaterialForm = React.memo(
 
         <Card className="p-10 bg-white border border-gray-200">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="name"
@@ -74,25 +81,6 @@ export const MaterialForm = React.memo(
                     <FormControl>
                       <Input
                         placeholder="Enter material name"
-                        {...field}
-                        className="bg-white text-gray-800 border-gray-300 placeholder-gray-400"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-600" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="uom"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-800 font-semibold">
-                      Unit of Measurement *
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., kg, ton, liter"
                         {...field}
                         className="bg-white text-gray-800 border-gray-300 placeholder-gray-400"
                       />

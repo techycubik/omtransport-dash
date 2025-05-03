@@ -4,6 +4,7 @@ import { UserModel, UserAuditLogModel } from '../models';
 import { AuditAction } from '../../models/userAuditLog';
 import { UserRole } from '../../models/user';
 import '../types'; // Import the Express type extensions
+import { Sequelize, Op } from 'sequelize';
 
 // Simple in-memory OTP storage (replace with a proper DB table in production)
 const otpStore: Record<string, { otp: string, expiresAt: Date }> = {};
@@ -269,4 +270,223 @@ export const deactivateUser = asyncHandler(async (req: Request, res: Response) =
   });
   
   return res.status(200).json({ message: 'User deactivated successfully' });
+});
+
+export const listUsers = asyncHandler(async (req: Request, res: Response) => {
+  // Get the requester's user ID from the session or token
+  const requesterId = req.user?.id;
+  
+  console.log('listUsers called - authenticated user:', req.user);
+  
+  if (!requesterId) {
+    console.log('listUsers - No requesterId found');
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  // Check if requester is an admin
+  const requester = await UserModel.findByPk(requesterId);
+  console.log('listUsers - requester found:', requester?.email, requester?.role);
+  
+  if (!requester || (requester.role !== UserRole.ADMIN && requester.role !== UserRole.SUPER_ADMIN)) {
+    console.log('listUsers - Permission denied for user:', requester?.email, requester?.role);
+    return res.status(403).json({ error: 'Admin permission required' });
+  }
+  
+  // Get all users
+  const users = await UserModel.findAll({
+    where: {
+      isActive: true
+    },
+    attributes: ['id', 'email', 'name', 'role', 'lastLogin', 'createdAt']
+  });
+  
+  console.log(`listUsers - Returning ${users.length} users`);
+  return res.status(200).json(users);
+});
+
+export const createUser = asyncHandler(async (req: Request, res: Response) => {
+  const { email, name, role } = req.body;
+  const requesterId = req.user?.id;
+  const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
+  
+  if (!requesterId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  // Check if requester has admin permissions
+  const requester = await UserModel.findByPk(requesterId);
+  
+  if (!requester || (requester.role !== UserRole.ADMIN && requester.role !== UserRole.SUPER_ADMIN)) {
+    return res.status(403).json({ error: 'Admin permission required' });
+  }
+  
+  // Only super admins can create admin users
+  if (role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN) {
+    if (requester.role !== UserRole.SUPER_ADMIN) {
+      return res.status(403).json({ error: 'Only super admins can create admin users' });
+    }
+  }
+  
+  // Check if email is already in use
+  const existing = await UserModel.findOne({ where: { email } });
+  
+  if (existing) {
+    return res.status(400).json({ error: 'Email already in use' });
+  }
+  
+  // Create new user
+  const newUser = await UserModel.create({
+    email,
+    name,
+    role: role || UserRole.STAFF,
+    isActive: true
+  });
+  
+  // Log the action
+  await UserAuditLogModel.create({
+    userId: requesterId,
+    action: AuditAction.CREATE,
+    entityType: 'User',
+    entityId: newUser.id as number,
+    changes: { email, name, role: role || UserRole.STAFF },
+    ipAddress
+  });
+  
+  // Return new user details
+  return res.status(201).json({
+    id: newUser.id,
+    email: newUser.email,
+    name: newUser.name,
+    role: newUser.role,
+    createdAt: newUser.createdAt
+  });
+});
+
+export const updateUser = asyncHandler(async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const { name, role } = req.body;
+  const requesterId = req.user?.id;
+  const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
+  
+  // Safely parse userId
+  const userIdNum = parseInt(userId);
+  if (isNaN(userIdNum)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+  
+  if (!requesterId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  // Check if requester has admin permissions
+  const requester = await UserModel.findByPk(requesterId);
+  
+  if (!requester || (requester.role !== UserRole.ADMIN && requester.role !== UserRole.SUPER_ADMIN)) {
+    return res.status(403).json({ error: 'Admin permission required' });
+  }
+  
+  // Get user to update
+  const userToUpdate = await UserModel.findByPk(userIdNum);
+  
+  if (!userToUpdate) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  
+  // Only super admins can modify admin users
+  if (userToUpdate.role === UserRole.ADMIN || userToUpdate.role === UserRole.SUPER_ADMIN || 
+      role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN) {
+    if (requester.role !== UserRole.SUPER_ADMIN) {
+      return res.status(403).json({ error: 'Only super admins can modify admin users' });
+    }
+  }
+  
+  // Track changes for audit log
+  const changes: Record<string, any> = {};
+  
+  if (name !== undefined && name !== userToUpdate.name) {
+    changes.name = name;
+  }
+  
+  if (role !== undefined && role !== userToUpdate.role) {
+    // If trying to demote the only super admin, prevent it
+    if (userToUpdate.role === UserRole.SUPER_ADMIN && role !== UserRole.SUPER_ADMIN) {
+      const superAdminCount = await UserModel.count({
+        where: { role: UserRole.SUPER_ADMIN, isActive: true }
+      });
+      
+      if (superAdminCount <= 1) {
+        return res.status(400).json({ error: 'Cannot demote the only super admin' });
+      }
+    }
+    changes.role = role;
+  }
+  
+  // If no changes, return success without updating
+  if (Object.keys(changes).length === 0) {
+    return res.status(200).json({
+      id: userToUpdate.id,
+      email: userToUpdate.email,
+      name: userToUpdate.name,
+      role: userToUpdate.role,
+      lastLogin: userToUpdate.lastLogin,
+      createdAt: userToUpdate.createdAt
+    });
+  }
+  
+  // Update user
+  await userToUpdate.update(changes);
+  
+  // Log the action
+  await UserAuditLogModel.create({
+    userId: requesterId,
+    action: AuditAction.UPDATE,
+    entityType: 'User',
+    entityId: userIdNum,
+    changes,
+    ipAddress
+  });
+  
+  return res.status(200).json({
+    id: userToUpdate.id,
+    email: userToUpdate.email,
+    name: userToUpdate.name,
+    role: userToUpdate.role,
+    lastLogin: userToUpdate.lastLogin,
+    createdAt: userToUpdate.createdAt
+  });
+});
+
+export const searchUsers = asyncHandler(async (req: Request, res: Response) => {
+  const { query } = req.query;
+  const requesterId = req.user?.id;
+  
+  if (!requesterId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  // Check if requester has admin permissions
+  const requester = await UserModel.findByPk(requesterId);
+  
+  if (!requester || (requester.role !== UserRole.ADMIN && requester.role !== UserRole.SUPER_ADMIN)) {
+    return res.status(403).json({ error: 'Admin permission required' });
+  }
+  
+  // Search conditions
+  const searchCondition = query
+    ? {
+        [Op.or]: [
+          { email: { [Op.iLike]: `%${query}%` } },
+          { name: { [Op.iLike]: `%${query}%` } }
+        ],
+        isActive: true
+      }
+    : { isActive: true };
+  
+  // Get matching users
+  const users = await UserModel.findAll({
+    where: searchCondition,
+    attributes: ['id', 'email', 'name', 'role', 'lastLogin', 'createdAt']
+  });
+  
+  return res.status(200).json(users);
 }); 

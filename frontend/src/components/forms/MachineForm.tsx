@@ -74,9 +74,9 @@ export const MachineForm = React.memo(
           </h2>
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={onCancel}
-            className="text-gray-500"
+            className="text-gray-500 hover:text-gray-700"
           >
             <X size={18} />
           </Button>
@@ -137,10 +137,19 @@ export const MachineForm = React.memo(
             </div>
 
             <div className="flex justify-end space-x-4">
-              <Button type="button" variant="outline" onClick={onCancel}>
+              <button 
+                type="button" 
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50" 
+                onClick={onCancel}
+              >
                 Cancel
-              </Button>
-              <Button type="submit">Save Machine</Button>
+              </button>
+              <button 
+                type="submit" 
+                className="px-4 py-2 bg-primary border border-transparent rounded-md text-sm font-medium text-white hover:bg-primary/90"
+              >
+                Save
+              </button>
             </div>
           </form>
         </Form>

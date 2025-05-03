@@ -94,25 +94,35 @@ export default function CustomersPage() {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("API response error:", errorText);
+          console.log("API response error text:", errorText);
 
           try {
             // Try to parse as JSON
             const errorData = JSON.parse(errorText);
-            throw new Error(
+            
+            // Special handling for GST number already exists error
+            if (errorData.error && errorData.error.includes("GST number already exists")) {
+              toast.error("A customer with this GST number already exists");
+              return; // Return early without throwing an error
+            }
+            
+            // Handle other errors
+            toast.error(
               errorData.error ||
                 (editingCustomer
                   ? "Failed to update customer"
                   : "Failed to create customer")
             );
+            return; // Return early without throwing an error
           } catch (parseError) {
-            // If it's not valid JSON, use the raw text
-            throw new Error(
+            // If it's not valid JSON, display the raw text as a toast error
+            toast.error(
               errorText ||
                 (editingCustomer
                   ? "Failed to update customer"
                   : "Failed to create customer")
             );
+            return; // Return early without throwing an error
           }
         }
 
@@ -161,7 +171,9 @@ export default function CustomersPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete customer");
+        const errorText = await response.text().catch(() => "Unknown error");
+        toast.error(`Failed to delete customer: ${errorText}`);
+        return;
       }
 
       toast.success("Customer deleted successfully");

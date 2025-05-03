@@ -12,8 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, ChevronDown, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
+import { useState } from "react";
 
 // Define types
 interface Material {
@@ -30,18 +31,32 @@ interface Customer {
   contact?: string;
 }
 
+interface SalesOrderItem {
+  id?: number;
+  materialId: number;
+  crusherSiteId?: number;
+  qty: number;
+  rate: number;
+  uom: string;
+  Material?: Material;
+  CrusherSite?: {
+    id: number;
+    name: string;
+    location: string;
+  };
+}
+
 interface SalesOrder {
   id: number;
   customerId: number;
-  materialId: number;
-  qty: number;
-  rate: number;
   vehicleNo?: string;
+  challanNo?: string;
+  address?: string;
   orderDate: string;
   createdAt?: string;
   updatedAt?: string;
   Customer?: Customer;
-  Material?: Material;
+  SalesOrderItems?: SalesOrderItem[];
 }
 
 interface SalesListViewProps {
@@ -62,19 +77,35 @@ const SalesListView = React.memo(
     loading,
     error,
   }: SalesListViewProps) => {
+    const [expandedRows, setExpandedRows] = useState<number[]>([]);
+
+    const toggleRowExpansion = (orderId: number) => {
+      setExpandedRows(prev =>
+        prev.includes(orderId)
+          ? prev.filter(id => id !== orderId)
+          : [...prev, orderId]
+      );
+    };
+
     const filteredSalesOrders =
       searchTerm.trim() === ""
         ? salesOrders
         : salesOrders.filter((order) => {
             const searchLower = searchTerm.toLowerCase();
             const customerName = order.Customer?.name?.toLowerCase() || "";
-            const materialName = order.Material?.name?.toLowerCase() || "";
             const vehicleNo = order.vehicleNo?.toLowerCase() || "";
+            const challanNo = order.challanNo?.toLowerCase() || "";
+            
+            // Also search in materials
+            const materials = order.SalesOrderItems?.some(item => 
+              item.Material?.name.toLowerCase().includes(searchLower)
+            ) || false;
 
             return (
               customerName.includes(searchLower) ||
-              materialName.includes(searchLower) ||
-              vehicleNo.includes(searchLower)
+              vehicleNo.includes(searchLower) ||
+              challanNo.includes(searchLower) ||
+              materials
             );
           });
 
@@ -85,6 +116,11 @@ const SalesListView = React.memo(
         console.error("Invalid date:", dateString);
         return "Invalid date";
       }
+    };
+    
+    // Calculate total amount for an order
+    const calculateOrderTotal = (order: SalesOrder) => {
+      return order.SalesOrderItems?.reduce((sum, item) => sum + (item.qty * (item.rate || 0)), 0) || 0;
     };
 
     // Use a stable reference for the change handler
@@ -127,7 +163,7 @@ const SalesListView = React.memo(
         <div className="mb-4 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Search by customer, material or vehicle number..."
+            placeholder="Search by customer, material, vehicle number or challan number..."
             value={searchTerm}
             onChange={handleSearchChange}
             className="bg-white border-gray-200 text-gray-700 pl-10"
@@ -139,6 +175,7 @@ const SalesListView = React.memo(
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50 border-b border-gray-200">
+                  <TableHead className="text-gray-700 font-semibold w-10"></TableHead>
                   <TableHead className="text-gray-700 font-semibold">
                     ID
                   </TableHead>
@@ -149,26 +186,20 @@ const SalesListView = React.memo(
                     Customer
                   </TableHead>
                   <TableHead className="text-gray-700 font-semibold">
-                    Material
-                  </TableHead>
-                  <TableHead className="text-gray-700 font-semibold">
-                    Quantity
-                  </TableHead>
-                  <TableHead className="text-gray-700 font-semibold">
-                    Rate
-                  </TableHead>
-                  <TableHead className="text-gray-700 font-semibold">
-                    Amount
+                    Total Amount
                   </TableHead>
                   <TableHead className="text-gray-700 font-semibold">
                     Vehicle
+                  </TableHead>
+                  <TableHead className="text-gray-700 font-semibold">
+                    Challan No.
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       <div className="space-y-3">
                         {[...Array(5)].map((_, index) => (
                           <div
@@ -184,7 +215,7 @@ const SalesListView = React.memo(
                 ) : filteredSalesOrders.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={8}
+                      colSpan={7}
                       className="h-24 text-center text-gray-600"
                     >
                       {searchTerm
@@ -194,43 +225,98 @@ const SalesListView = React.memo(
                   </TableRow>
                 ) : (
                   filteredSalesOrders.map((order) => (
-                    <TableRow
-                      key={order.id}
-                      className="hover:bg-gray-50 border-b border-gray-200"
-                    >
-                      <TableCell className="font-medium text-gray-800">
-                        {order.id}
-                      </TableCell>
-                      <TableCell className="text-gray-700">
-                        {formatDate(order.orderDate)}
-                      </TableCell>
-                      <TableCell className="text-gray-700">
-                        {order.Customer?.name}
-                      </TableCell>
-                      <TableCell className="text-gray-700">
-                        {order.Material?.name}
-                      </TableCell>
-                      <TableCell className="text-gray-700">
-                        {order.qty} {order.Material?.uom}
-                      </TableCell>
-                      <TableCell className="text-gray-700">
-                        {new Intl.NumberFormat("en-IN", {
-                          style: "currency",
-                          currency: "INR",
-                          maximumFractionDigits: 2,
-                        }).format(order.rate)}
-                      </TableCell>
-                      <TableCell className="font-medium text-gray-800">
-                        {new Intl.NumberFormat("en-IN", {
-                          style: "currency",
-                          currency: "INR",
-                          maximumFractionDigits: 2,
-                        }).format(order.qty * order.rate)}
-                      </TableCell>
-                      <TableCell className="text-gray-700">
-                        {order.vehicleNo || "—"}
-                      </TableCell>
-                    </TableRow>
+                    <React.Fragment key={order.id}>
+                      <TableRow
+                        className="hover:bg-gray-50 border-b border-gray-200 cursor-pointer"
+                        onClick={() => toggleRowExpansion(order.id)}
+                      >
+                        <TableCell>
+                          {expandedRows.includes(order.id) ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium text-gray-800">
+                          {order.id}
+                        </TableCell>
+                        <TableCell className="text-gray-700">
+                          {formatDate(order.orderDate)}
+                        </TableCell>
+                        <TableCell className="text-gray-700">
+                          {order.Customer?.name}
+                        </TableCell>
+                        <TableCell className="font-medium text-gray-800">
+                          {new Intl.NumberFormat("en-IN", {
+                            style: "currency",
+                            currency: "INR",
+                            maximumFractionDigits: 2,
+                          }).format(calculateOrderTotal(order))}
+                        </TableCell>
+                        <TableCell className="text-gray-700">
+                          {order.vehicleNo || "—"}
+                        </TableCell>
+                        <TableCell className="text-gray-700">
+                          {order.challanNo || "—"}
+                        </TableCell>
+                      </TableRow>
+                      
+                      {/* Expanded row with item details */}
+                      {expandedRows.includes(order.id) && (
+                        <TableRow className="bg-gray-50">
+                          <TableCell colSpan={7} className="p-0">
+                            <div className="p-4">
+                              <h3 className="text-sm font-semibold mb-2">Items</h3>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="bg-gray-100">
+                                    <TableHead className="text-xs">Material</TableHead>
+                                    <TableHead className="text-xs">Crusher Site</TableHead>
+                                    <TableHead className="text-xs">Quantity</TableHead>
+                                    <TableHead className="text-xs">Rate</TableHead>
+                                    <TableHead className="text-xs">Amount</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {order.SalesOrderItems?.map((item) => (
+                                    <TableRow key={item.id}>
+                                      <TableCell className="text-sm">
+                                        {item.Material?.name || "—"}
+                                      </TableCell>
+                                      <TableCell className="text-sm">
+                                        {item.CrusherSite?.name || "—"}
+                                      </TableCell>
+                                      <TableCell className="text-sm">
+                                        {item.qty} {item.uom}
+                                      </TableCell>
+                                      <TableCell className="text-sm">
+                                        {new Intl.NumberFormat("en-IN", {
+                                          style: "currency",
+                                          currency: "INR",
+                                        }).format(item.rate)}
+                                      </TableCell>
+                                      <TableCell className="text-sm font-medium">
+                                        {new Intl.NumberFormat("en-IN", {
+                                          style: "currency",
+                                          currency: "INR",
+                                        }).format(item.qty * (item.rate || 0))}
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                              
+                              {order.address && (
+                                <div className="mt-3">
+                                  <span className="text-sm font-semibold">Delivery Address: </span>
+                                  <span className="text-sm">{order.address}</span>
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
                   ))
                 )}
               </TableBody>

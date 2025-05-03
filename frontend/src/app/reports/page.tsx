@@ -21,7 +21,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { saveAs } from 'file-saver';
-import html2pdf from 'html2pdf.js';
 
 // Define the types of views
 type ViewType = "purchases" | "sales" | "combined";
@@ -198,6 +197,9 @@ export default function ReportsPage() {
     try {
       toast.success(`Exporting ${view} report to PDF...`);
       
+      // Dynamically import html2pdf only on the client side
+      const html2pdf = (await import('html2pdf.js')).default;
+      
       // Create a simple HTML table with the data
       let htmlContent = `
         <html>
@@ -270,7 +272,7 @@ export default function ReportsPage() {
         filename: `${view}-delivery-report-${startDate}-to-${endDate}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' as 'landscape' | 'portrait' }
       };
 
       // Generate PDF from HTML
@@ -326,7 +328,7 @@ export default function ReportsPage() {
           formatDate(d.dropDate),
           d.pickupQuantity,
           d.dropQuantity || '',
-          d.difference || '',
+          d.difference?.toFixed(2) || '',
           d.rate || '',
           d.amount ? d.amount.toFixed(2) : '',
           d.status
@@ -507,11 +509,11 @@ export default function ReportsPage() {
             onValueChange={handleViewChange}
             className="w-full"
           >
-            <TabsList>
+            {/* <TabsList>
               <TabsTrigger value="combined">Combined View</TabsTrigger>
               <TabsTrigger value="purchases">Purchase View</TabsTrigger>
               <TabsTrigger value="sales">Sales View</TabsTrigger>
-            </TabsList>
+            </TabsList> */}
 
             <TabsContent value="combined">
               <TableWrapper
@@ -565,7 +567,6 @@ export default function ReportsPage() {
                         </TableCell>
                         <TableCell>
                           {delivery.vehicleNo}
-                          {delivery.driver ? ` / ${delivery.driver}` : ""}
                         </TableCell>
                         <TableCell>{delivery.pickupLocation || "-"}</TableCell>
                         <TableCell>{delivery.dropLocation || "-"}</TableCell>
@@ -580,7 +581,7 @@ export default function ReportsPage() {
                               : ""
                           }
                         >
-                          {delivery.difference ?? "-"}
+                          {delivery.difference?.toFixed(2) ?? "-"}
                         </TableCell>
                         <TableCell>{delivery.rate ?? "-"}</TableCell>
                         <TableCell>{delivery.amount ? `₹${delivery.amount.toFixed(2)}` : "-"}</TableCell>

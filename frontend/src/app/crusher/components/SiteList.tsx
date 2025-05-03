@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Plus, Pencil, Trash2, Search } from "lucide-react";
+import { MapPin, Plus, Pencil, Trash2, Search, ArrowLeft } from "lucide-react";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import TableWrapper from "@/components/TableWrapper";
@@ -57,13 +57,35 @@ const goaLocations = [
   "Sanguem",
   "Sanquelim",
   "Valpoi",
+  "Pernem",
+  "Cuncolim",
+  "Mandrem",
+  "Aldona",
+  "Anjuna",
+  "Calangute",
+  "Candolim",
+  "Colva",
+  "Cortalim",
+  "Betul",
+  "Majorda",
+  "Morjim",
+  "Arambol",
+  "Assagao",
+  "Benaulim",
+  "Cavelossim",
+  "Chinchinim",
+  "Saligao",
+  "Reis Magos",
+  "Sawantwadi Border",
+  "Tiswadi",
+  "Old Goa"
 ];
 
 export default function SiteList() {
   const [sites, setSites] = useState<CrusherSite[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isAddMode, setIsAddMode] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<CrusherSite | null>(null);
@@ -78,23 +100,39 @@ export default function SiteList() {
 
   // Fetch sites and materials
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (retryCount = 0) => {
       setLoading(true);
       try {
         // Fetch materials
         const materialsRes = await api("/api/materials");
-        if (!materialsRes.ok) throw new Error("Failed to fetch materials");
+        if (!materialsRes.ok) {
+          const errorText = await materialsRes.text();
+          throw new Error(`Failed to fetch materials: ${materialsRes.status} - ${errorText}`);
+        }
         const materialsData = await materialsRes.json();
         setMaterials(materialsData);
 
         // Fetch crusher sites
         const sitesRes = await api("/api/crusher/sites");
-        if (!sitesRes.ok) throw new Error("Failed to fetch crusher sites");
+        if (!sitesRes.ok) {
+          const errorText = await sitesRes.text();
+          throw new Error(`Failed to fetch crusher sites: ${sitesRes.status} - ${errorText}`);
+        }
         const sitesData = await sitesRes.json();
         setSites(sitesData);
       } catch (error) {
-        toast.error("Error loading data");
-        console.error(error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error loading data";
+        console.error("API Error:", error);
+        
+        // Retry up to 2 times with exponential backoff
+        if (retryCount < 2) {
+          const retryDelay = Math.pow(2, retryCount) * 1000; // 1s, 2s
+          toast(`Connection issue. Retrying in ${retryDelay/1000}s...`);
+          setTimeout(() => fetchData(retryCount + 1), retryDelay);
+          return;
+        }
+        
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -159,7 +197,7 @@ export default function SiteList() {
       const newSite = await response.json();
       setSites([newSite, ...sites]);
       toast.success("Crusher site added successfully!");
-      setIsAddDialogOpen(false);
+      setIsAddMode(false);
       resetForm();
     } catch (error) {
       toast.error("Error creating crusher site");
@@ -258,101 +296,26 @@ export default function SiteList() {
       )
     : sites;
 
-  console.log("Search term:", searchTerm);
-  console.log("Filtered sites:", filteredSites);
-
-  return (
-    <Card className="p-6">
-      {/* Header section with search and add button */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="relative w-72">
-          <Search
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-            size={18}
-          />
-          <Input
-            placeholder="Search sites..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+  if (isAddMode) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center mb-6">
+          <Button 
+            variant="ghost" 
+            className="mr-2 p-0 hover:bg-transparent"
+            onClick={() => setIsAddMode(false)}
+          >
+            <ArrowLeft className="h-5 w-5 mr-1" />
+            Back
+          </Button>
+          <h2 className="text-2xl font-bold">Add New Crusher Site</h2>
         </div>
-        {/* Make the Add button more prominent */}
-        <Button 
-          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90" 
-          onClick={() => {
-            resetForm();
-            setIsAddDialogOpen(true);
-          }}
-        >
-          <Plus size={16} />
-          Add New Site
-        </Button>
-      </div>
-      
-      <TableWrapper
-        loading={loading}
-        isEmpty={filteredSites.length === 0}
-        emptyMessage="No crusher sites found. Add your first site!"
-        searchTerm={searchTerm}
-      >
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Owner</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Materials</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredSites.map((site) => (
-              <TableRow key={site.id}>
-                <TableCell className="font-medium">{site.name}</TableCell>
-                <TableCell>{site.owner}</TableCell>
-                <TableCell>{site.location}</TableCell>
-                <TableCell>
-                  {site.Materials.map(m => m.name).join(", ") || "None"}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="flex items-center gap-1"
-                      onClick={() => handleEdit(site)}
-                    >
-                      <Pencil size={14} />
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex items-center gap-1 text-red-500 hover:text-red-600"
-                      onClick={() => handleDelete(site)}
-                    >
-                      <Trash2 size={14} />
-                      Delete
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableWrapper>
-
-      {/* Add Site Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Add New Crusher Site</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
+        
+        <Card className="p-6">
+          <div className="space-y-6">
             <div className="space-y-2">
               <label htmlFor="name" className="text-sm font-medium">
-                Site Name
+                Site Name <span className="text-red-500">*</span>
               </label>
               <Input 
                 id="name"
@@ -367,7 +330,7 @@ export default function SiteList() {
             
             <div className="space-y-2">
               <label htmlFor="owner" className="text-sm font-medium">
-                Owner Name
+                Owner Name <span className="text-red-500">*</span>
               </label>
               <Input 
                 id="owner"
@@ -382,7 +345,7 @@ export default function SiteList() {
             
             <div className="space-y-2">
               <label htmlFor="location" className="text-sm font-medium">
-                Location
+                Location <span className="text-red-500">*</span>
               </label>
               <select
                 id="location"
@@ -421,12 +384,103 @@ export default function SiteList() {
                 ))}
               </div>
             </div>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setIsAddMode(false)}>
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                variant="primary" 
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={onSubmit}
+              >
+                Save
+              </Button>
+            </div>
           </div>
-          <DialogFooter>
-            <Button type="button" onClick={onSubmit}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <Card className="p-6">
+      {/* Header section with search and add button */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="relative w-72">
+          <Search
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            size={18}
+          />
+          <Input
+            placeholder="Search sites..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        {/* Make the Add button more prominent */}
+        <button 
+          className="flex items-center gap-2 px-4 py-2 bg-primary border border-transparent rounded-md text-sm font-medium text-black hover:bg-primary/90"
+          onClick={() => {
+            resetForm();
+            setIsAddMode(true);
+          }}
+        >
+          <Plus size={16} />
+          Add New Site
+        </button>
+      </div>
+      
+      <TableWrapper
+        loading={loading}
+        isEmpty={filteredSites.length === 0}
+        emptyMessage="No crusher sites found. Add your first site!"
+        searchTerm={searchTerm}
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Owner</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Materials</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredSites.map((site) => (
+              <TableRow key={site.id}>
+                <TableCell className="font-medium">{site.name}</TableCell>
+                <TableCell>{site.owner}</TableCell>
+                <TableCell>{site.location}</TableCell>
+                <TableCell>
+                  {site.Materials.map(m => m.name).join(", ") || "None"}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <button 
+                      className="px-3 py-1 border border-gray-300 rounded-md text-xs font-medium flex items-center gap-1 text-gray-700 hover:bg-gray-50"
+                      onClick={() => handleEdit(site)}
+                    >
+                      <Pencil size={14} />
+                      Edit
+                    </button>
+                    <button 
+                      className="px-3 py-1 border border-gray-300 rounded-md text-xs font-medium flex items-center gap-1 text-red-500 hover:bg-gray-50" 
+                      onClick={() => handleDelete(site)}
+                    >
+                      <Trash2 size={14} />
+                      Delete
+                    </button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableWrapper>
 
       {/* Edit Site Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -507,9 +561,20 @@ export default function SiteList() {
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" onClick={onUpdate}>Update</Button>
-          </DialogFooter>
+          <div className="flex justify-end space-x-4 mt-6">
+            <button 
+              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
+              Cancel
+            </button>
+            <button 
+              className="px-4 py-2 bg-primary border border-transparent rounded-md text-sm font-medium text-white hover:bg-primary/90"
+              onClick={onUpdate}
+            >
+              Save
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -517,24 +582,26 @@ export default function SiteList() {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogTitle>Are you sure?</DialogTitle>
           </DialogHeader>
           <p>
-            Are you sure you want to delete the crusher site "{selectedSite?.name}"? 
+            This will permanently delete the crusher site "{selectedSite?.name}".
             This action cannot be undone.
           </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+          <div className="flex justify-end space-x-4 mt-6">
+            <button 
+              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
               Cancel
-            </Button>
-            <Button 
-              variant="outline" 
-              className="text-red-600"
+            </button>
+            <button 
+              className="px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-red-700"
               onClick={confirmDelete}
             >
               Delete
-            </Button>
-          </DialogFooter>
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>

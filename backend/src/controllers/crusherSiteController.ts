@@ -68,9 +68,10 @@ export const createCrusherSite = async (req: Request, res: Response) => {
     // Add materials if provided using direct associations
     if (Array.isArray(materials) && materials.length > 0) {
       // Create the junction table entries directly
+      const siteId = newSite.get('id') as number;
       for (const materialId of materials) {
         await CrusherSiteMaterial.create({
-          crusher_site_id: newSite.get('id') as number,
+          crusher_site_id: siteId,
           material_id: materialId
         });
       }

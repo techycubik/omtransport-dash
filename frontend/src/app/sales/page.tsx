@@ -26,27 +26,42 @@ interface Customer {
   contact?: string;
 }
 
+interface SalesOrderItem {
+  id?: number;
+  materialId: number;
+  crusherSiteId?: number;
+  qty: number;
+  rate: number;
+  uom: string;
+  Material?: Material;
+  CrusherSite?: {
+    id: number;
+    name: string;
+    location: string;
+  };
+}
+
 interface SalesOrder {
   id: number;
   customerId: number;
-  materialId: number;
-  qty: number;
-  rate: number;
   vehicleNo?: string;
+  challanNo?: string;
+  address?: string;
   orderDate: string;
   createdAt?: string;
   updatedAt?: string;
   Customer?: Customer;
-  Material?: Material;
+  SalesOrderItems?: SalesOrderItem[];
 }
 
-// Define the form schema
+// Define the form schema with items array
 const formSchema = z.object({
   customerId: z.coerce.number().positive("Please select a customer"),
-  materialId: z.coerce.number().positive("Please select a material"),
-  qty: z.coerce.number().positive("Quantity must be positive"),
-  rate: z.coerce.number().positive("Rate must be positive"),
   vehicleNo: z
+    .string()
+    .optional()
+    .transform((val) => (val === "" ? undefined : val)),
+  challanNo: z
     .string()
     .optional()
     .transform((val) => (val === "" ? undefined : val)),
@@ -58,6 +73,13 @@ const formSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val === "" ? undefined : val)),
+  items: z.array(z.object({
+    materialId: z.coerce.number().positive("Please select a material"),
+    crusherSiteId: z.coerce.number().optional(),
+    qty: z.coerce.number().positive("Quantity must be positive"),
+    rate: z.coerce.number().positive("Rate must be positive"),
+    uom: z.string().min(1, "UOM is required"),
+  })).min(1, "At least one item is required"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -150,12 +172,9 @@ export default function SalesPage() {
 
   const handleSubmit = useCallback(async (values: FormValues) => {
     try {
-      // Remove address field since it's not in the database model
-      const { address, ...apiValues } = values;
-
       // Format date as ISO string
       const formattedValues = {
-        ...apiValues,
+        ...values,
         orderDate: new Date(values.orderDate).toISOString(),
       };
 
@@ -197,6 +216,7 @@ export default function SalesPage() {
           : "Failed to create sale order. Please try again later.";
 
       toast.error(errorMessage);
+      throw error; // Rethrow to let the form handle it
     }
   }, []);
 

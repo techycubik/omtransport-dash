@@ -7,6 +7,16 @@ export async function api(path: string, options?: RequestInit) {
   
   console.log(`Fetching from: ${url}`);
   
+  // For testing purposes, add a mock user ID if none is provided
+  // In a real app, this would come from your authentication system
+  const headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    // Add a test user ID for development - remove in production
+    'user-id': '1', // This corresponds to the first user in the database
+    ...(options?.headers || {})
+  };
+  
   try {
     // Add a timeout to avoid hanging requests
     const controller = new AbortController();
@@ -15,6 +25,8 @@ export async function api(path: string, options?: RequestInit) {
     const response = await fetch(url, {
       credentials: 'include',
       signal: controller.signal,
+      headers,
+      mode: 'cors',
       ...options
     });
     
@@ -44,10 +56,19 @@ export async function api(path: string, options?: RequestInit) {
     return response;
   } catch (error) {
     console.error(`API request failed for ${url}:`, error);
-    // Check if it's an AbortError (timeout)
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error(`Request to ${url} timed out after 10 seconds`);
+    
+    // Provide more detailed error messages for common issues
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        throw new Error(`Request to ${url} timed out after 10 seconds`);
+      } else if (error.message.includes('NetworkError')) {
+        throw new Error(`Network error when connecting to ${API}. Please check if the backend server is running.`);
+      } else if (error.message.includes('CORS')) {
+        throw new Error(`CORS error when connecting to ${API}. Please check backend CORS configuration.`);
+      }
     }
-    throw error;
+    
+    // Fallback error message
+    throw new Error(`Failed to connect to ${API}. Please check your network connection and make sure the backend server is running.`);
   }
 } 

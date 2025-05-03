@@ -50,7 +50,7 @@ router.get('/deliveries', async (req: Request, res: Response) => {
     const endDateTime = new Date(endDate);
     endDateTime.setHours(23, 59, 59, 999);
     
-    const { PurchaseOrder, SalesOrder, Dispatch, Material, Vendor, Customer } = sequelize.models;
+    const { PurchaseOrder, SalesOrder, Dispatch, Material, Vendor, Customer, CrusherRun } = sequelize.models;
     
     console.log(`Fetching dispatches between ${startDateTime.toISOString()} and ${endDateTime.toISOString()}`);
     
@@ -65,7 +65,6 @@ router.get('/deliveries', async (req: Request, res: Response) => {
         {
           model: SalesOrder,
           include: [
-            { model: Material },
             { model: Customer }
           ]
         },
@@ -75,7 +74,8 @@ router.get('/deliveries', async (req: Request, res: Response) => {
             { model: Material },
             { model: Vendor }
           ]
-        }
+        },
+        { model: CrusherRun, include: [{ model: Material }] }
       ]
     });
     
@@ -87,7 +87,11 @@ router.get('/deliveries', async (req: Request, res: Response) => {
       const isSalesOrder = !!dispatchData.SalesOrder;
       const order = isSalesOrder ? dispatchData.SalesOrder : dispatchData.PurchaseOrder;
       const entity = isSalesOrder ? order?.Customer : order?.Vendor;
-      const material = isSalesOrder ? order?.Material : order?.Material;
+      
+      // Get material info from the relationships we have
+      const material = isSalesOrder 
+        ? dispatchData.CrusherRun?.Material
+        : (order?.Material || dispatchData.CrusherRun?.Material);
       
       return {
         id: dispatchData.id,
