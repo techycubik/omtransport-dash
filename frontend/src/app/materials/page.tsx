@@ -67,7 +67,7 @@ export default function MaterialsPage() {
   }, []);
 
   return (
-    <AppShell pageTitle="Materials">
+    <AppShell pageTitle={showForm ? "Add New Material" : "Materials"}>
       <div className="container mx-auto py-6 px-4 max-w-6xl">
         {showForm ? (
           <MaterialForm onSubmit={handleSubmit} onCancel={handleCancel} />

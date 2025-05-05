@@ -70,10 +70,7 @@ export const VendorForm = React.memo(
 
     return (
       <div className="w-full">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">
-            {editingVendor ? "Edit Vendor" : "Add New Vendor"}
-          </h1>
+        <div className="mb-4 flex items-center justify-end">
           <Button
             variant="ghost"
             onClick={onCancel}

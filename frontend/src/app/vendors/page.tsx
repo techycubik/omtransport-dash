@@ -184,7 +184,15 @@ export default function VendorsPage() {
   }, []);
 
   return (
-    <AppShell pageTitle="Vendors">
+    <AppShell
+      pageTitle={
+        showForm
+          ? editingVendor
+            ? "Edit Vendor"
+            : "Add New Vendor"
+          : "Vendors"
+      }
+    >
       <div className="container mx-auto py-6 px-4 max-w-6xl">
         {error ? (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-4">

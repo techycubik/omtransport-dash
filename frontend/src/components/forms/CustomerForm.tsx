@@ -147,9 +147,6 @@ export const CustomerForm = React.memo(
             <ArrowLeft className="h-4 w-4 mr-1 text-gray-800" />
             Back
           </Button>
-          <h1 className="text-2xl font-bold text-gray-800">
-            {editingCustomer ? "Edit Customer" : "Add New Customer"}
-          </h1>
         </div>
 
         <Card className="p-10 bg-white border border-gray-200">

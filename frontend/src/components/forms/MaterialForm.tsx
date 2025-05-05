@@ -57,7 +57,6 @@ export const MaterialForm = React.memo(
             <ArrowLeft className="h-4 w-4 mr-1 text-gray-800" />
             Back
           </Button>
-          <h1 className="text-2xl font-bold text-gray-800">Add New Material</h1>
         </div>
 
         <Card className="p-10 bg-white border border-gray-200">
@@ -91,11 +90,15 @@ export const MaterialForm = React.memo(
                       Unit of Measurement *
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="e.g., kg, ton, liter"
+                      <select
                         {...field}
-                        className="bg-white text-gray-800 border-gray-300 placeholder-gray-400"
-                      />
+                        className="bg-white w-full text-gray-800 border border-gray-300 rounded-md px-3 py-2"
+                      >
+                        <option value="">Select unit</option>
+                        <option value="kg">Kg</option>
+                        <option value="ton">Ton</option>
+                        <option value="liter">Liter</option>
+                      </select>
                     </FormControl>
                     <FormMessage className="text-red-600" />
                   </FormItem>
